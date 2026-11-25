@@ -1,0 +1,14 @@
+{
+  "name": "KL OS",
+  "version": "1.0.0",
+  "files": [
+    "install.lua",
+    "startup.lua",
+    "os/ui.lua",
+    "os/desktop.lua",
+    "apps/files.lua",
+    "apps/shell.lua",
+    "apps/browser.lua",
+    "server/webserver.lua"
+  ]
+}
