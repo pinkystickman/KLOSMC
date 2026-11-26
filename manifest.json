@@ -1,0 +1,18 @@
+{
+  "name": "HackOS",
+  "version": "2.0.0",
+  "files": [
+    "install.lua",
+    "startup.lua",
+    "manifest.json",
+    "os/ui.lua",
+    "os/desktop.lua",
+    "os/network.lua",
+    "apps/files.lua",
+    "apps/shell.lua",
+    "apps/browser.lua",
+    "apps/network.lua",
+    "apps/server.lua",
+    "server/webserver.lua"
+  ]
+}
