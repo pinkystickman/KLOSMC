@@ -1,10 +1,10 @@
 {
   "name": "KL OS / HackOS",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "editions": {
     "standard": {
       "name": "KL OS Standard",
-      "description": "Windows-style KL OS desktop with taskbar, Files, Shell, Browser, Network, Security, Remote, Mail and recovery.",
+      "description": "Windows 11-inspired KL OS desktop with taskbar-only apps, Files, Lua runner, HTML Website Studio, rednet web hosting, Mail, Remote tools and OS updates.",
       "files": [
         {
           "source": "editions/standard/startup.lua",
@@ -31,7 +31,7 @@
           "target": "apps/browser.lua"
         },
         {
-          "source": "editions/standard/server/webserver.lua",
+          "source": "server/webserver.lua",
           "target": "server/webserver.lua"
         },
         {
@@ -77,12 +77,32 @@
         {
           "source": "apps/network.lua",
           "target": "apps/network.lua"
+        },
+        {
+          "source": "apps/site.lua",
+          "target": "apps/site.lua"
+        },
+        {
+          "source": "apps/server.lua",
+          "target": "apps/server.lua"
+        },
+        {
+          "source": "apps/update.lua",
+          "target": "apps/update.lua"
+        },
+        {
+          "source": "os/site.lua",
+          "target": "os/site.lua"
+        },
+        {
+          "source": "os/updater.lua",
+          "target": "os/updater.lua"
         }
       ]
     },
     "government": {
       "name": "HackOS Government",
-      "description": "HackOS Government desktop with Remote Center, multi-PC administration, exploit lab, Mail and recovery.",
+      "description": "Windows 11-inspired HackOS desktop with taskbar-only apps, Remote Center, multi-PC administration, exploit lab, HTML Website Studio, persistent rednet web hosting, Mail and OS updates.",
       "files": [
         {
           "source": "startup.lua",
@@ -163,15 +183,36 @@
         {
           "source": "rescue.lua",
           "target": "rescue.lua"
+        },
+        {
+          "source": "apps/site.lua",
+          "target": "apps/site.lua"
+        },
+        {
+          "source": "apps/update.lua",
+          "target": "apps/update.lua"
+        },
+        {
+          "source": "os/site.lua",
+          "target": "os/site.lua"
+        },
+        {
+          "source": "os/updater.lua",
+          "target": "os/updater.lua"
         }
       ]
     }
   },
   "notes": {
-    "remote_desktop": "Remote Desktop mirrors the CC:Tweaked terminal and forwards keyboard and real mouse events. Normal remote administration requires the target to enable Remote Access and share its access code.",
+    "desktop": "Windows-inspired desktop with taskbar-only app shortcuts, Start menu, right-click creation context menu, title bars and a taskbar action to return from the current maximised app view. No custom cursor is drawn.",
+    "file_execution": "Files can launch Lua scripts with CraftOS shell.run; text, config and HTML files open in the built-in CraftOS editor.",
+    "updates": "OS Update downloads the selected edition from the GitHub main branch into staging, then replaces system files with rollback copies. /Documents, /www and /hackos/mailbox.json are preserved.",
+    "websites": "Website Studio creates and edits HTML pages under /www. The background rednet website service hosts index.html and other .html files for both KL Browser and HackOS Browser. It supports a simple HTML subset: title, headings, paragraphs, links, lists and line breaks; CSS and JavaScript are not executed.",
+    "hosting": "Enable hosting in Website Server or Website Studio. The server stays active in the OS background service while you continue to use other apps.",
+    "remote_desktop": "Remote Desktop requires both computers to support the CC:Tweaked terminal APIs. Mouse hover is not available from the platform; button, drag and keyboard events are forwarded.",
     "file_transfer": "Remote file transfer is restricted to /public; files are limited to 8192 bytes.",
     "mail": "HackOS internal mail uses rednet between reachable computers; it is not external SMTP or Gmail.",
     "recovery": "Installer stores recovery copies under /hackos/recovery/files. Deleting a system file triggers a blue-screen-style recovery flow. Press R to restore missing files or run rescue.lua from CraftOS.",
-    "exploit_lab": "Government includes a deliberately fictional Minecraft-only KLOS-BOOT-OVERWRITE exploit against KL OS Standard 2.4.0+. It ignores that OS normal Remote Access and Security Center settings, removes only an OS file, and forces local recovery. It is not a general-purpose exploit."
+    "exploit_lab": "Government includes a deliberately fictional Minecraft-only KLOS-BOOT-OVERWRITE exploit against KL OS Standard system files. It is not a general-purpose exploit."
   }
 }

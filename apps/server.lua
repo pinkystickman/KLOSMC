@@ -1,2 +1,2 @@
--- Launch the built-in HackOS server on this computer.
-return { run = function() require("server.webserver").run() end }
+local S = require("server.webserver")
+return { run = function() S.run() end }

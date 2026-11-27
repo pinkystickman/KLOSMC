@@ -1,6 +1,6 @@
 -- KL OS / HackOS edition installer. Run: wget <repo>/install.lua install.lua ; install.lua
 local BASE_URL = "https://raw.githubusercontent.com/pinkystickman/KLOSMC/main/"
-local VERSION = "2.4.0"
+local VERSION = "2.5.0"
 
 local function theme()
   local colour = term.isColor()
@@ -138,6 +138,9 @@ local function install(editionKey)
   local cfg, cfgErr = fs.open("/hackos/edition.cfg", "w")
   if not cfg then error("Cannot save edition selection: " .. tostring(cfgErr), 0) end
   cfg.write(editionKey); cfg.close()
+  local vf, vfErr = fs.open("/hackos/version.cfg", "w")
+  if not vf then error("Cannot save version metadata: " .. tostring(vfErr), 0) end
+  vf.write(VERSION .. "\n"); vf.close()
 
   progress(#paths, #paths, "Finishing installation")
   draw("Installation complete", edition.name .. " is ready.")

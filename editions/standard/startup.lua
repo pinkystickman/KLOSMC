@@ -1,4 +1,4 @@
--- KL OS / HackOS dual-edition startup (2.4.0).
+-- KL OS / HackOS dual-edition startup (2.5.0).
 package.path = "/?.lua;/?/init.lua;" .. package.path
 
 local function repairMissing()
@@ -72,7 +72,8 @@ local ok, err = xpcall(function()
     function() require("os.desktop").run() end,
     function() require("os.remote").run() end,
     function() require("os.mail").run() end,
-    function() require("os.legacy").run() end
+    function() require("os.legacy").run() end,
+    function() require("server.webserver").service() end
   )
 end, function(e)
   return debug.traceback(tostring(e), 2)
