@@ -1,6 +1,6 @@
--- HackOS installer. Run with: wget .../install.lua install.lua ; install.lua
+-- KL OS / HackOS edition installer. Run: wget <repo>/install.lua install.lua ; install.lua
 local BASE_URL = "https://raw.githubusercontent.com/pinkystickman/KLOSMC/main/"
-local VERSION = "2.0.0"
+local VERSION = "2.3.0"
 
 local function theme()
   local colour = term.isColor()
@@ -11,7 +11,7 @@ local function theme()
     accent = colour and colors.cyan or colors.white,
     good = colour and colors.lime or colors.white,
     bad = colour and colors.red or colors.white,
-    bar = colour and colors.gray or colors.gray,
+    bar = colors.gray,
   }
 end
 
@@ -30,8 +30,8 @@ end
 local function draw(title, subtitle)
   term.setBackgroundColor(T.bg); term.setTextColor(T.fg); term.clear()
   fill(1, T.title, colors.white)
-  text(2, 1, "HACKOS  /  INSTALLER", colors.white, T.title)
-  text(2, 3, title or "HackOS Setup", T.fg, T.bg)
+  text(2, 1, "KL OS  /  HACKOS SETUP", colors.white, T.title)
+  text(2, 3, title or "System Setup", T.fg, T.bg)
   if subtitle then text(2, 4, subtitle, T.fg, T.bg) end
 end
 local function waitKey()
@@ -40,7 +40,6 @@ local function waitKey()
     if k == keys.enter or k == keys.space then return end
   end
 end
-
 local function errorScreen(message)
   draw("Installation failed", "The system was not installed.")
   local lines = require("cc.strings").wrap(tostring(message), math.max(10, term.getSize() - 4))
@@ -48,55 +47,62 @@ local function errorScreen(message)
   text(2, term.getSize() - 1, "Press Enter to return to CraftOS", T.accent, T.bg)
   waitKey()
 end
-
 local function safePath(path)
   return type(path) == "string" and path ~= "" and not path:match("^/") and not path:find("..", 1, true) and not path:find("\\", 1, true)
 end
-
 local function get(path)
   local response, err = http.get(BASE_URL .. path)
   if not response then return nil, err end
-  local body = response.readAll()
-  response.close()
+  local body = response.readAll(); response.close()
   return body
 end
-
 local function progress(i, total, label)
-  local w, h = term.getSize()
+  local w = term.getSize()
   local bw = math.max(8, w - 8)
   local filled = math.floor(bw * i / math.max(1, total))
   text(2, 7, label, T.fg, T.bg)
-  fill(9, T.bg, T.fg)
   text(2, 9, "[" .. ("#"):rep(filled) .. ("-"):rep(math.max(0, bw - filled)) .. "]", T.accent, T.bg)
   text(2, 10, tostring(i) .. " / " .. tostring(total), T.fg, T.bg)
 end
+local function button(x, y, label, selected, width)
+  local value = "  " .. label .. "  "
+  if width then value = (value .. (" "):rep(width)):sub(1, width) end
+  local bg = selected and T.accent or T.title
+  text(x, y, value, colors.white, bg)
+  return { x1 = x, y1 = y, x2 = x + #value - 1, y2 = y }
+end
 
-local function install()
+local function install(editionKey)
   if not http then error("HTTP API is disabled. Enable http in the CC:Tweaked server configuration.", 0) end
-  draw("Downloading system manifest", "Source: github.com/pinkystickman/KLOSMC  |  " .. VERSION)
+  draw("Reading edition manifest", "Source: github.com/pinkystickman/KLOSMC  |  " .. VERSION)
   local raw, err = get("manifest.json")
   if not raw then error("Could not download manifest.json: " .. tostring(err), 0) end
-  local manifest = textutils.unserialiseJSON(raw)
-  if type(manifest) ~= "table" or type(manifest.files) ~= "table" or #manifest.files == 0 then
-    error("The GitHub manifest is invalid or empty.", 0)
+  local manifest = textutils.unserializeJSON(raw)
+  if type(manifest) ~= "table" or type(manifest.editions) ~= "table" then error("The edition manifest is invalid.", 0) end
+  local edition = manifest.editions[editionKey]
+  if type(edition) ~= "table" or type(edition.files) ~= "table" or #edition.files == 0 then
+    error("The selected edition is missing from the manifest.", 0)
   end
 
-  local data, total = {}, #manifest.files
-  for i, path in ipairs(manifest.files) do
-    if not safePath(path) then error("Unsafe file path in manifest: " .. tostring(path), 0) end
-    progress(i - 1, total, "Downloading " .. path)
-    local body, why = get(path)
-    if not body then error("Download failed for " .. path .. ": " .. tostring(why), 0) end
-    data[path] = body
+  local data, total = {}, #edition.files
+  for i, item in ipairs(edition.files) do
+    local source, target
+    if type(item) == "string" then source, target = item, item
+    elseif type(item) == "table" then source, target = item.source, item.target end
+    if not safePath(source) or not safePath(target) then error("Unsafe file entry in manifest: " .. tostring(source), 0) end
+    progress(i - 1, total, "Downloading " .. source)
+    local body, why = get(source)
+    if not body then error("Download failed for " .. source .. ": " .. tostring(why), 0) end
+    data[target] = body
   end
 
-  draw("Installing HackOS", "Writing system files...")
+  draw("Installing " .. edition.name, "Writing system files...")
   local startupBackup = false
   if fs.exists("startup.lua") then
     local f = fs.open("startup.lua", "r")
     local current = f and f.readAll() or ""
     if f then f.close() end
-    if not current:find("HackOS", 1, true) then
+    if not current:find("KL OS / HackOS 2.3.0 dual-edition startup", 1, true) then
       if fs.exists("startup.lua.bak") then fs.delete("startup.lua.bak") end
       fs.copy("startup.lua", "startup.lua.bak")
       startupBackup = true
@@ -114,67 +120,59 @@ local function install()
     if not f then error("Cannot write " .. path .. ": " .. tostring(why), 0) end
     f.write(data[path]); f.close()
   end
+  fs.makeDir("/hackos")
+  local cfg, cfgErr = fs.open("/hackos/edition.cfg", "w")
+  if not cfg then error("Cannot save edition selection: " .. tostring(cfgErr), 0) end
+  cfg.write(editionKey); cfg.close()
+
   progress(#paths, #paths, "Finishing installation")
-  draw("Installation complete", "HackOS " .. VERSION .. " is ready.")
+  draw("Installation complete", edition.name .. " is ready.")
   text(2, 6, "System files installed successfully.", T.good, T.bg)
   if startupBackup then text(2, 7, "Previous startup.lua saved as startup.lua.bak", T.fg, T.bg) end
-  text(2, 9, "The computer will reboot into HackOS.", T.fg, T.bg)
+  text(2, 9, "The computer will reboot into " .. edition.name .. ".", T.fg, T.bg)
   sleep(2)
   os.reboot()
 end
 
 if not http then errorScreen("HTTP API is disabled. Enable it in the CC:Tweaked configuration."); return end
 
-draw("Welcome to HackOS Setup", "A graphical installer for the HackOS operating environment.")
-text(2, 6, "This will download the latest files from the configured GitHub repository.", T.fg, T.bg)
-text(2, 8, "Requirements: HTTP enabled and a modem is recommended for networking.", T.fg, T.bg)
-
-local function button(x, y, label, selected, fg)
-  local value = "  " .. label .. "  "
-  local bg = selected and T.accent or T.title
-  text(x, y, value, fg or colors.white, bg)
-  return { x1 = x, y1 = y, x2 = x + #value - 1, y2 = y }
-end
-
-local selected = 1
-while true do
-  local installButton = button(2, 10, "Install HackOS", selected == 1, T.good)
-  local cancelButton = button(23, 10, "Cancel", selected == 2, T.fg)
-  local event, a, b, c = os.pullEvent()
-  if event == "key" then
-    if a == keys.left or a == keys.right or a == keys.tab then
-      selected = selected == 1 and 2 or 1
-    elseif a == keys.enter or a == keys.space then
-      if selected == 1 then
-        local ok, err = pcall(install)
-        if not ok then errorScreen(err) end
-        return
-      else
-        term.setBackgroundColor(colors.black); term.setTextColor(colors.white)
-        term.clear(); term.setCursorPos(1, 1)
-        print("HackOS setup cancelled.")
-        return
-      end
-    elseif a == keys.q or a == keys.escape then
-      term.setBackgroundColor(colors.black); term.setTextColor(colors.white)
-      term.clear(); term.setCursorPos(1, 1)
-      print("HackOS setup cancelled.")
-      return
-    end
-  elseif event == "mouse_click" and a == 1 then
-    local x, y = b, c
-    local function hit(rect)
-      return x >= rect.x1 and x <= rect.x2 and y == rect.y1
-    end
-    if hit(installButton) then
-      local ok, err = pcall(install)
-      if not ok then errorScreen(err) end
-      return
-    elseif hit(cancelButton) then
-      term.setBackgroundColor(colors.black); term.setTextColor(colors.white)
-      term.clear(); term.setCursorPos(1, 1)
-      print("HackOS setup cancelled.")
-      return
+local selected = "standard"
+local function chooseScreen()
+  while true do
+    draw("Choose your edition", "Select the operating system for this computer.")
+    local std = button(2, 6, "STANDARD / KL OS", selected == "standard", 22)
+    text(2, 7, "Classic KL OS with files, shell, browser, Mail and optional Remote.", T.fg, T.bg)
+    local gov = button(2, 9, "GOVERNMENT / HACKOS", selected == "government", 24)
+    text(2, 10, "Windows-style desktop, network tools, Remote Center and Mail.", T.fg, T.bg)
+    text(2, 11, "Remote desktop, mouse/keyboard control, shared files, multi-PC tools and internal Mail.", T.fg, T.bg)
+    text(2, 13, "Remote actions require Remote Access and the target computer access code.", T.good, T.bg)
+    local _, h = term.getSize()
+    local go = button(2, h - 2, "Install selected edition", true)
+    local cancel = button(30, h - 2, "Cancel", false)
+    local ev = { os.pullEvent() }
+    if ev[1] == "key" then
+      if ev[2] == keys.up or ev[2] == keys.down then
+        selected = selected == "standard" and "government" or "standard"
+      elseif ev[2] == keys.one then selected = "standard"
+      elseif ev[2] == keys.two then selected = "government"
+      elseif ev[2] == keys.enter or ev[2] == keys.space then return selected
+      elseif ev[2] == keys.q or ev[2] == keys.escape then return nil end
+    elseif ev[1] == "mouse_click" and ev[2] == 1 then
+      local x, y = ev[3], ev[4]
+      local function hit(r) return x >= r.x1 and x <= r.x2 and y == r.y1 end
+      if hit(std) then selected = "standard"
+      elseif hit(gov) then selected = "government"
+      elseif hit(go) then return selected
+      elseif hit(cancel) then return nil end
     end
   end
 end
+
+local editionKey = chooseScreen()
+if not editionKey then
+  term.setBackgroundColor(colors.black); term.setTextColor(colors.white)
+  term.clear(); term.setCursorPos(1, 1); print("Setup cancelled.")
+  return
+end
+local ok, err = pcall(install, editionKey)
+if not ok then errorScreen(err) end

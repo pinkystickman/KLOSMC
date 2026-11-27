@@ -1,4 +1,4 @@
--- HackOS startup entry point.
+-- KL OS / HackOS 2.3.0 dual-edition startup.
 package.path = "/?.lua;/?/init.lua;" .. package.path
 
 local function crash(err)
@@ -24,8 +24,21 @@ local function crash(err)
   end
 end
 
+-- Keep a readable terminal buffer so authenticated Remote Desktop sessions can stream it.
+if window and window.create then
+  local parent = term.current()
+  local width, height = term.getSize()
+  local mirror = window.create(parent, 1, 1, width, height, true)
+  term.redirect(mirror)
+end
+
 local ok, err = xpcall(function()
-  require("os.desktop").run()
+  parallel.waitForAny(
+    function() require("os.desktop").run() end,
+    function() require("os.remote").run() end,
+    function() require("os.mail").run() end,
+    function() require("os.legacy").run() end
+  )
 end, function(e)
   if e == "Terminated" then return "HackOS was terminated." end
   return debug.traceback(tostring(e), 2)

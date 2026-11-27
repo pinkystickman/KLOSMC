@@ -106,7 +106,10 @@ function ui.pointer(ev)
   if e == "mouse_click" and a == 1 then
     cur.x, cur.y = b, c
     return "click", b, c
-  elseif e == "mouse_drag" then
+  elseif e == "mouse_drag" or e == "mouse_up" then
+    cur.x, cur.y = b, c
+    return "move", b, c
+  elseif e == "mouse_scroll" then
     cur.x, cur.y = b, c
     return "move", b, c
   elseif e == "key" then

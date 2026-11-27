@@ -8,7 +8,11 @@ local APPS = {
   { name = "Browser",   mod = "apps.browser",  glyph = "[W]", desc = "Browse the HackOS network" },
   { name = "Network",   mod = "apps.network",  glyph = "[N]", desc = "IP address and connected nodes" },
   { name = "Server",    mod = "apps.server",   glyph = "[S]", desc = "Host services on this computer" },
-  { name = "Terminal",  mod = "apps.shell",    glyph = "[>]", desc = "Run CraftOS commands" },
+  { name = "Remote",    mod = "apps.remote",   glyph = "[R]", desc = "Remote desktop, shell, files and power management" },
+  { name = "Mail",      mod = "apps.mail",      glyph = "[@]", desc = "Send and receive mail over the in-game network" },
+  { name = "Hack",      mod = "apps.hack",     glyph = "[H]", desc = "Run the read-only KL OS exploit-lab scan" },
+  { name = "Security",  mod = "apps.security", glyph = "[! ]", desc = "Patch this computer's legacy diagnostic exposure" },
+  { name = "Terminal",  mod = "apps.shell",    glyph = "[>]", desc = "Run local CraftOS commands" },
 }
 
 local function launch(mod)
@@ -45,7 +49,7 @@ function M.run()
       if y % 2 == 0 then ui.text(1, y, ui.pad(" ", w), colors.white, T.desktop) end
     end
     ui.text(3, 2, "HACKOS", colors.white, T.desktop)
-    ui.text(3, 3, "SECURE SYSTEMS  /  NETWORK DESKTOP", colors.lightGray, T.desktop)
+    ui.text(3, 3, "GOVERNMENT EDITION  /  NETWORK DESKTOP", colors.lightGray, T.desktop)
 
     local cols = math.max(1, math.floor((w - 4) / 13))
     for i, app in ipairs(APPS) do

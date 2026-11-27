@@ -48,9 +48,19 @@ N.config = config
 
 function N.open()
   if not rednet then return false, "Rednet API is unavailable." end
-  local ok, err = pcall(function() peripheral.find("modem", rednet.open) end)
-  if not ok then return false, tostring(err) end
-  if not rednet.isOpen() then return false, "No modem is open. Connect a wired, wireless, or Ender modem." end
+  if not peripheral or not peripheral.getNames or not peripheral.getType then
+    return false, "Peripheral API is unavailable."
+  end
+  local found = false
+  for _, side in ipairs(peripheral.getNames()) do
+    if peripheral.getType(side) == "modem" then
+      found = true
+      pcall(rednet.open, side)
+    end
+  end
+  if not found or not rednet.isOpen() then
+    return false, "No modem is open. Connect a wired, wireless, or Ender modem."
+  end
   return true
 end
 
@@ -89,9 +99,22 @@ function N.discover(timeout)
     local id, msg = rednet.receive(N.PROTOCOL, left)
     if not id then break end
     if type(msg) == "table" and msg.kind == "OFFER" and id ~= os.getComputerID() and validIP(msg.ip) then
-      if not seen[id] then
-        seen[id] = true
-        peers[#peers + 1] = { id = id, ip = msg.ip, hostname = tostring(msg.hostname or ("computer-" .. id)), services = msg.services or { "HackOS node" } }
+      local peer = seen[id]
+      if not peer then
+        peer = { id = id, ip = msg.ip, hostname = tostring(msg.hostname or ("computer-" .. id)), services = {} }
+        seen[id] = peer
+        peers[#peers + 1] = peer
+      end
+      peer.ip = msg.ip
+      peer.hostname = tostring(msg.hostname or peer.hostname or ("computer-" .. id))
+      if type(msg.mailAddress) == "string" then peer.mailAddress = msg.mailAddress end
+      local services = msg.services or { "HackOS node" }
+      for _, service in ipairs(services) do
+        local exists = false
+        for _, current in ipairs(peer.services) do
+          if current == service then exists = true; break end
+        end
+        if not exists then peer.services[#peer.services + 1] = service end
       end
     end
   end

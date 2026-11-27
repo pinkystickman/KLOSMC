@@ -1,61 +1,72 @@
-# HackOS for CC: Tweaked
+# KL OS / HackOS 2.3.0
 
-HackOS is a lightweight, Windows-inspired graphical operating environment for Minecraft **CC: Tweaked**. It builds on the original KL OS project and adds a logical IP-address layer, node discovery, and a web server which can run on any CC computer.
+Minecraft **CC: Tweaked** operating system with two editions, rednet networking, remote administration, and internal in-game Mail.
 
-## Features
+## Editions
 
-- Windows-inspired colour desktop, taskbar, launcher, mouse support and keyboard cursor.
-- File Explorer, CraftOS terminal and in-game browser.
-- Network Center with a configurable logical IPv4 address and hostname.
-- Network discovery over CC: Tweaked rednet.
-- Server Manager: any computer running the Server app can host a HackOS website and answer node-discovery requests.
-- Browser access by IP address or advertised hostname.
-- Graphical installer with download progress and a backup of an existing non-HackOS `startup.lua`.
+### Standard — KL OS
 
-## Install
+The classic KL OS desktop with Files, Shell, Browser and Security Center. It includes the Mail app and the authenticated Remote agent; incoming remote control is disabled until enabled locally in Remote Access Settings.
 
-**Publish the package to GitHub first.** This ZIP contains the finished HackOS source, but it does not automatically change the remote repository. Open the `HackOS-2.0.0` folder in this archive and upload its *contents* (not the outer folder) to the root of the `main` branch of `pinkystickman/KLOSMC`, replacing the old KL OS files. Commit the changes.
+### Government — HackOS
 
-Then:
+The Windows-inspired HackOS desktop with Files, Browser, Network Center, Server Manager, Terminal, Remote Center, Hack Console, Security Center and Mail.
 
-1. Use an Advanced Computer for the full colour experience. A modem is required for networking; wired modems and networking cable work well for a local wired network. Wireless and Ender modems are also opened by HackOS when available.
-2. Enable the CC:Tweaked HTTP API in the world/server configuration.
-3. At the CraftOS prompt, run:
+## New in 2.3.0: Remote Center
 
-   ```text
-   wget https://raw.githubusercontent.com/pinkystickman/KLOSMC/main/install.lua install.lua
-   install.lua
-   ```
+Government edition can manage multiple discovered computers from one dashboard. Each target must run KL OS / HackOS 2.3.0 (or a compatible updated remote agent), have a modem connected to the same reachable rednet network, and have **Remote Access enabled locally**. A valid eight-digit access code is required for every connection.
 
-4. Choose **Install HackOS**. The computer reboots when installation is complete.
+- **Remote Desktop:** stream the target computer's terminal screen.
+- **Mouse and keyboard:** forward key, character, paste, click, drag, mouse-up and scroll events to the target. Screen coordinates are scaled to the target terminal size.
+- **Cursor tracking:** click, drag, release and scroll positions update the target UI cursor. CC:Tweaked exposes mouse movement while a button is held (`mouse_drag`) but does not provide a general free-hover mouse-move event; therefore passive hover movement cannot be mirrored.
+- **Remote Shell:** execute CraftOS commands with returned output.
+- **File Transfer:** upload/download individual files in the target's `/public` folder. Maximum file size is 8192 bytes.
+- **Power Management:** remotely restart or shut down a connected target, with a confirmation prompt.
+- **Multi-PC dashboard:** discover and select multiple remote-enabled computers.
 
-The installer is configured to download its manifest and files from:
-`https://raw.githubusercontent.com/pinkystickman/KLOSMC/main/`
+Remote Desktop uses a terminal mirror and is not a Minecraft game-world video stream. It displays the target computer's CC:Tweaked terminal UI. Screen capture needs CC:Tweaked 1.84.0 or newer (`window.getLine`). The controller should be an advanced computer to generate physical mouse events; the target can be any supported CC computer. Keyboard navigation works on regular computers too.
 
-## Network setup
+## New: HackOS internal Mail
 
-- Connect the computers with wired modems and network cable, or use wireless / Ender modems. Attachments must be compatible with the same rednet network.
-- Open **Network Center** to view or change the computer's logical IPv4 address and hostname.
-- Addresses default to a deterministic private-style address based on the CC computer ID. Set static addresses that are unique on your network.
-- The **Server** app turns the current computer into a discoverable node and web host. Keep the Server Manager open while clients connect.
-- Open **Browser**, then enter a server's IP address (for example `10.0.0.25`) or its advertised hostname. Use **Directory** to scan for active HackOS server nodes.
+Mail is an in-game messaging system transported over rednet, not external SMTP/Internet email. Each computer has one local mailbox address such as `admin@computer-12`. Open **Mail → Network Scan** to discover mail-enabled nodes, then compose to the recipient's mailbox address. Inbox and Sent folders are saved locally. Mail requires the recipient to be online and running the 2.3.0 mail service.
 
-## Important networking details
+- Mailbox usernames can be changed in Mailbox Settings.
+- Subject limit: 100 characters.
+- Body limit: 3000 characters.
+- Up to 100 inbox and 100 sent messages are retained per computer.
 
-HackOS IP addresses are a lightweight **logical addressing layer**, not a full TCP/IP stack. Packets are transported by CC: Tweaked `rednet`, which addresses computers using their in-game computer IDs. The IP-to-computer mapping is discovered through HackOS node announcements. A node must be running the Server app to answer discovery requests and host the bundled website. Wired modem links provide the physical network path between computers; they do not create an actual Internet connection.
+## Hack Console / exploit-lab
 
-## Security notice
+Government edition can also discover KL OS / HackOS computers exposing the deliberate, Minecraft-only legacy diagnostics endpoint, even when normal Remote Access is disabled. This is a read-only guest session for basic diagnostics and text files inside `/public`. It does not grant remote desktop, keyboard/mouse control, arbitrary shell commands, file modification, or power management. A target owner can patch the endpoint in Security Center.
 
-HackOS is intended for Minecraft roleplay, learning and hobby projects. CC: Tweaked rednet does not provide authentication, encryption, or sender verification by itself. The logical IP addresses and Windows-like appearance do **not** make this a secure real-world operating system. Do not use it for real government, confidential, or sensitive data.
+## Setup / install
 
-## Project layout
+Publish the contents of this package (not the outer `HackOS-2.3.0` folder) to the root of the `main` branch of:
 
-- `install.lua` — graphical GitHub installer
-- `startup.lua` — boot entry point and crash screen
-- `os/` — desktop, UI and network modules
-- `apps/` — Files, Terminal, Browser, Network Center and Server apps
-- `server/webserver.lua` — discovery responder and in-game web host
+`https://github.com/pinkystickman/KLOSMC`
+
+Then run on each computer:
+
+```text
+wget https://raw.githubusercontent.com/pinkystickman/KLOSMC/main/install.lua install.lua
+install.lua
+```
+
+Choose **STANDARD / KL OS** or **GOVERNMENT / HACKOS** in the graphical installer. The installer is configured to download files from the repository's `main` branch. GitHub is not updated automatically by this ZIP.
+
+## Networking and compatibility
+
+- Uses CC:Tweaked `rednet` over wired, wireless or Ender modems. Wired networks need wired modems and networking cable.
+- Logical IPv4 addresses identify CC computers; they are not actual TCP/IP addresses.
+- Every participant needs a modem attached and must be on a network reachable by rednet.
+- Remote Control, Remote Desktop, File Transfer and Power require the target's local Remote Access setting and access code.
+- Hack Console read-only diagnostics and Mail are separate services.
+- File transfer is restricted to `/public`.
+
+## Security note
+
+This project is a Minecraft/CC:Tweaked roleplay and learning OS, not a secure real-world administration platform. Rednet packets and access codes are not encrypted by this project. Use only in trusted worlds and do not expose the network to untrusted players.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See `LICENSE`.

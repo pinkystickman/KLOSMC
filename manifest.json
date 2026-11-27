@@ -1,18 +1,155 @@
 {
-  "name": "HackOS",
-  "version": "2.0.0",
-  "files": [
-    "install.lua",
-    "startup.lua",
-    "manifest.json",
-    "os/ui.lua",
-    "os/desktop.lua",
-    "os/network.lua",
-    "apps/files.lua",
-    "apps/shell.lua",
-    "apps/browser.lua",
-    "apps/network.lua",
-    "apps/server.lua",
-    "server/webserver.lua"
-  ]
+  "name": "KL OS / HackOS",
+  "version": "2.3.0",
+  "editions": {
+    "standard": {
+      "name": "KL OS Standard",
+      "description": "Classic KL OS desktop with Files, Shell, Browser, optional authenticated remote administration, and HackOS internal Mail.",
+      "files": [
+        {
+          "source": "editions/standard/startup.lua",
+          "target": "startup.lua"
+        },
+        {
+          "source": "editions/standard/os/ui.lua",
+          "target": "os/ui.lua"
+        },
+        {
+          "source": "editions/standard/os/desktop.lua",
+          "target": "os/desktop.lua"
+        },
+        {
+          "source": "editions/standard/apps/files.lua",
+          "target": "apps/files.lua"
+        },
+        {
+          "source": "editions/standard/apps/shell.lua",
+          "target": "apps/shell.lua"
+        },
+        {
+          "source": "editions/standard/apps/browser.lua",
+          "target": "apps/browser.lua"
+        },
+        {
+          "source": "editions/standard/server/webserver.lua",
+          "target": "server/webserver.lua"
+        },
+        {
+          "source": "os/network.lua",
+          "target": "os/network.lua"
+        },
+        {
+          "source": "os/remote.lua",
+          "target": "os/remote.lua"
+        },
+        {
+          "source": "remote-access.lua",
+          "target": "remote-access.lua"
+        },
+        {
+          "source": "os/legacy.lua",
+          "target": "os/legacy.lua"
+        },
+        {
+          "source": "apps/security.lua",
+          "target": "apps/security.lua"
+        },
+        {
+          "source": "os/mail.lua",
+          "target": "os/mail.lua"
+        },
+        {
+          "source": "apps/mail.lua",
+          "target": "apps/mail.lua"
+        },
+        {
+          "source": "apps/remote.lua",
+          "target": "apps/remote.lua"
+        }
+      ]
+    },
+    "government": {
+      "name": "HackOS Government",
+      "description": "HackOS Government with multi-PC remote desktop, mouse/keyboard control, file transfer, remote shell, power management and internal Mail.",
+      "files": [
+        {
+          "source": "startup.lua",
+          "target": "startup.lua"
+        },
+        {
+          "source": "os/ui.lua",
+          "target": "os/ui.lua"
+        },
+        {
+          "source": "os/desktop.lua",
+          "target": "os/desktop.lua"
+        },
+        {
+          "source": "os/network.lua",
+          "target": "os/network.lua"
+        },
+        {
+          "source": "os/remote.lua",
+          "target": "os/remote.lua"
+        },
+        {
+          "source": "apps/files.lua",
+          "target": "apps/files.lua"
+        },
+        {
+          "source": "apps/shell.lua",
+          "target": "apps/shell.lua"
+        },
+        {
+          "source": "apps/browser.lua",
+          "target": "apps/browser.lua"
+        },
+        {
+          "source": "apps/network.lua",
+          "target": "apps/network.lua"
+        },
+        {
+          "source": "apps/server.lua",
+          "target": "apps/server.lua"
+        },
+        {
+          "source": "apps/remote.lua",
+          "target": "apps/remote.lua"
+        },
+        {
+          "source": "server/webserver.lua",
+          "target": "server/webserver.lua"
+        },
+        {
+          "source": "remote-access.lua",
+          "target": "remote-access.lua"
+        },
+        {
+          "source": "os/legacy.lua",
+          "target": "os/legacy.lua"
+        },
+        {
+          "source": "apps/hack.lua",
+          "target": "apps/hack.lua"
+        },
+        {
+          "source": "apps/security.lua",
+          "target": "apps/security.lua"
+        },
+        {
+          "source": "os/mail.lua",
+          "target": "os/mail.lua"
+        },
+        {
+          "source": "apps/mail.lua",
+          "target": "apps/mail.lua"
+        }
+      ]
+    }
+  },
+  "notes": {
+    "remote_desktop": "Remote Desktop uses an in-game terminal mirror and rednet input events. Target must have Remote Access enabled and valid access code.",
+    "file_transfer": "Remote file transfer is restricted to /public; files are limited to 8192 bytes.",
+    "mail": "HackOS internal mail is rednet mail between computers on the same reachable network. It is not SMTP or external Internet email."
+  }
 }
