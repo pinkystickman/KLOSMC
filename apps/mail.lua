@@ -19,7 +19,7 @@ local function listMessages(title, messages)
 end
 
 local function compose()
-  ui.message("Compose Email", "HackOS internal mail works between computers running HackOS/KL OS 2.3.0 on the same rednet network. Address format: user@hostname.")
+  ui.message("Compose Email", "HackOS internal mail works between computers running HackOS/KL OS 2.4.0 on the same rednet network. Address format: user@hostname.")
   local to = ui.input("New Email", "To (example: admin@computer-2):", "")
   if not to or to == "" then return end
   local subject = ui.input("New Email", "Subject (maximum 100 characters):", "")
@@ -64,7 +64,6 @@ function A.run()
     local scanBtn = ui.button(22, 9, "Network Scan")
     local backBtn = ui.button(w - 8, h - 2, "Back")
     ui.text(2, h - 1, "Internal HackOS mail only - not external SMTP email", T.fg, T.bg)
-    ui.drawCursor()
     local ev = { os.pullEvent() }
     if ev[1] == "key" then
       if ev[2] == keys.one then listMessages("Inbox", mail.getInbox())

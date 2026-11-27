@@ -149,7 +149,6 @@ function B.run()
   local st = { hist = {}, scroll = 0, url = "", page = home }
   while true do
     draw(st)
-    ui.drawCursor()
     local w = ui.size()
     local ev = { os.pullEvent() }
     if ev[1] == "mouse_scroll" then

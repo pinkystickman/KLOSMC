@@ -1,14 +1,7 @@
 -- HackOS graphical interface helpers for CC: Tweaked.
 local ui = {}
 local wrap = require("cc.strings").wrap
-local cur = { x = 2, y = 2 }
-ui.cursor = cur
 ui.wrap = wrap
-
-local MOVE = {
-  [keys.left] = { -1, 0 }, [keys.right] = { 1, 0 },
-  [keys.up] = { 0, -1 }, [keys.down] = { 0, 1 },
-}
 
 function ui.size() return term.getSize() end
 function ui.col(c, mono) if term.isColor() then return c end return mono or colors.white end
@@ -18,10 +11,10 @@ function ui.theme()
   return {
     desktop = colour and colors.blue or colors.black,
     bg = colour and colors.lightGray or colors.black,
-    fg = colors.black,
-    bar = colour and colors.gray or colors.gray,
+    fg = colour and colors.black or colors.white,
+    bar = colour and colors.blue or colors.gray,
     barfg = colors.white,
-    task = colour and colors.black or colors.gray,
+    task = colour and colors.gray or colors.gray,
     taskfg = colors.white,
     btn = colour and colors.lightGray or colors.gray,
     btnfg = colors.black,
@@ -43,8 +36,7 @@ end
 function ui.clear(bg, fg)
   term.setBackgroundColor(bg or colors.black)
   term.setTextColor(fg or colors.white)
-  term.clear()
-  term.setCursorPos(1, 1)
+  term.clear(); term.setCursorPos(1, 1)
 end
 
 function ui.fill(x, y, w, h, bg, fg, ch)
@@ -53,9 +45,10 @@ function ui.fill(x, y, w, h, bg, fg, ch)
   ch = ch or " "
   term.setBackgroundColor(bg or colors.black)
   term.setTextColor(fg or colors.white)
-  local line = ui.pad(ch, w)
+  local left = math.max(1, x)
+  local line = ui.pad(ch, math.max(0, math.min(w, tw - left + 1)))
   for row = y, math.min(y + h - 1, th) do
-    if row >= 1 then term.setCursorPos(math.max(1, x), row); term.write(line:sub(1, math.max(0, tw - math.max(1, x) + 1))) end
+    if row >= 1 then term.setCursorPos(left, row); term.write(line) end
   end
 end
 
@@ -81,18 +74,15 @@ function ui.window(x, y, w, h, title)
   ui.fill(x, y, w, h, T.bg, T.fg)
   ui.fill(x, y, w, 1, T.bar, T.barfg)
   if title then ui.text(x + 1, y, title, T.barfg, T.bar) end
-  if w > 2 and h > 1 then
-    ui.text(x + w - 2, y, " X ", T.barfg, T.bar)
-  end
+  if w > 2 then ui.text(x + w - 2, y, " X ", T.barfg, T.bar) end
 end
 
--- Draw a button and return its hit rectangle.
 function ui.button(x, y, label, selected)
   local T = ui.theme()
   local s = " " .. tostring(label) .. " "
-  local over = cur.y == y and cur.x >= x and cur.x <= x + #s - 1
-  local bg = (selected or over) and T.hot or T.btn
-  ui.text(x, y, s, T.btnfg, bg)
+  local bg = selected and T.selected or T.btn
+  local fg = selected and T.selectedfg or T.btnfg
+  ui.text(x, y, s, fg, bg)
   return { x1 = x, y1 = y, x2 = x + #s - 1, y2 = y }
 end
 
@@ -100,71 +90,36 @@ function ui.hit(r, x, y)
   return r and x >= r.x1 and x <= r.x2 and y >= r.y1 and y <= r.y2
 end
 
+-- Only real mouse events are treated as pointer input. No custom on-screen cursor.
 function ui.pointer(ev)
-  local e, a, b, c = ev[1], ev[2], ev[3], ev[4]
-  local w, h = term.getSize()
-  if e == "mouse_click" and a == 1 then
-    cur.x, cur.y = b, c
-    return "click", b, c
-  elseif e == "mouse_drag" or e == "mouse_up" then
-    cur.x, cur.y = b, c
-    return "move", b, c
-  elseif e == "mouse_scroll" then
-    cur.x, cur.y = b, c
-    return "move", b, c
-  elseif e == "key" then
-    local d = MOVE[a]
-    if d then
-      cur.x = math.max(1, math.min(w, cur.x + d[1]))
-      cur.y = math.max(1, math.min(h, cur.y + d[2]))
-      return "move", cur.x, cur.y
-    elseif a == keys.enter or a == keys.space then
-      return "click", cur.x, cur.y
-    end
-  end
+  if ev[1] == "mouse_click" and ev[2] == 1 then return "click", ev[3], ev[4] end
+  return nil
 end
 
-function ui.drawCursor()
-  local _, h = term.getSize()
-  if cur.y < 1 or cur.y > h then return end
-  local bg = "f"
-  local t = term.current()
-  if t.getLine then
-    local _, _, b = t.getLine(cur.y)
-    if b and #b >= cur.x then bg = b:sub(cur.x, cur.x) end
-  end
-  term.setCursorPos(cur.x, cur.y)
-  term.blit("+", bg == "0" and "f" or "0", bg)
-end
 
 function ui.message(title, message)
   local w, h = term.getSize()
   local T = ui.theme()
-  ui.clear(T.bg, T.fg)
-  ui.header(title)
+  ui.clear(T.bg, T.fg); ui.header(title)
   local lines = wrap(tostring(message or ""), math.max(8, w - 4))
-  for i, line in ipairs(lines) do
-    if i + 2 < h then ui.text(2, i + 2, line, T.fg, T.bg) end
-  end
+  for i, line in ipairs(lines) do if i + 2 < h then ui.text(2, i + 2, line, T.fg, T.bg) end end
   ui.text(2, h, "Press any key or click to continue", T.accent, T.bg)
-  repeat
-    local e = { os.pullEvent() }
-  until e[1] == "key" or e[1] == "mouse_click"
+  repeat local e = { os.pullEvent() } until e[1] == "key" or e[1] == "mouse_click"
 end
 
 function ui.input(title, prompt, initial)
   local w, h = term.getSize()
   local T = ui.theme()
-  ui.clear(T.bg, T.fg)
-  ui.header(title)
-  ui.text(2, 3, prompt, T.fg, T.bg)
-  local y = math.min(h - 2, 5)
+  ui.clear(T.bg, T.fg); ui.header(title or "Input")
+  local lines = wrap(tostring(prompt or ""), math.max(8, w - 4))
+  for i = 1, math.min(#lines, math.max(1, h - 6)) do ui.text(2, i + 2, lines[i], T.fg, T.bg) end
+  local y = math.min(h - 2, math.max(5, #lines + 3))
   ui.fill(2, y, w - 4, 1, colors.white, colors.black)
-  term.setCursorPos(3, y)
-  term.setTextColor(colors.black)
-  term.setBackgroundColor(colors.white)
+  term.setCursorPos(3, y); term.setTextColor(colors.black); term.setBackgroundColor(colors.white)
+  if term.setCursorBlink then term.setCursorBlink(true) end
   local value = read(nil, nil, nil, initial or "")
-  term.setCursorBlink(false)
+  if term.setCursorBlink then term.setCursorBlink(false) end
+  term.setTextColor(T.fg); term.setBackgroundColor(T.bg)
   return value
 end
 

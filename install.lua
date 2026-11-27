@@ -1,6 +1,6 @@
 -- KL OS / HackOS edition installer. Run: wget <repo>/install.lua install.lua ; install.lua
 local BASE_URL = "https://raw.githubusercontent.com/pinkystickman/KLOSMC/main/"
-local VERSION = "2.3.0"
+local VERSION = "2.4.0"
 
 local function theme()
   local colour = term.isColor()
@@ -102,7 +102,7 @@ local function install(editionKey)
     local f = fs.open("startup.lua", "r")
     local current = f and f.readAll() or ""
     if f then f.close() end
-    if not current:find("KL OS / HackOS 2.3.0 dual-edition startup", 1, true) then
+    if not current:find("KL OS / HackOS dual-edition startup", 1, true) then
       if fs.exists("startup.lua.bak") then fs.delete("startup.lua.bak") end
       fs.copy("startup.lua", "startup.lua.bak")
       startupBackup = true
@@ -112,6 +112,20 @@ local function install(editionKey)
   local paths = {}
   for path in pairs(data) do paths[#paths + 1] = path end
   table.sort(paths)
+  -- Save a clean recovery copy before replacing the live operating-system files.
+  fs.makeDir("/hackos/recovery/files")
+  for _, path in ipairs(paths) do
+    local backup = fs.combine("/hackos/recovery/files", path)
+    local backupDir = fs.getDir(backup); if backupDir ~= "" then fs.makeDir(backupDir) end
+    local bf, be = fs.open(backup, "w")
+    if not bf then error("Cannot write recovery backup for " .. path .. ": " .. tostring(be), 0) end
+    bf.write(data[path]); bf.close()
+  end
+  local indexFile, indexErr = fs.open("/hackos/recovery/index.json", "w")
+  if not indexFile then error("Cannot write recovery index: " .. tostring(indexErr), 0) end
+  indexFile.write(textutils.serialiseJSON({ version = VERSION, edition = editionKey, paths = paths }))
+  indexFile.close()
+
   for i, path in ipairs(paths) do
     progress(i - 1, #paths, "Writing " .. path)
     local dir = fs.getDir(path)
@@ -144,8 +158,8 @@ local function chooseScreen()
     text(2, 7, "Classic KL OS with files, shell, browser, Mail and optional Remote.", T.fg, T.bg)
     local gov = button(2, 9, "GOVERNMENT / HACKOS", selected == "government", 24)
     text(2, 10, "Windows-style desktop, network tools, Remote Center and Mail.", T.fg, T.bg)
-    text(2, 11, "Remote desktop, mouse/keyboard control, shared files, multi-PC tools and internal Mail.", T.fg, T.bg)
-    text(2, 13, "Remote actions require Remote Access and the target computer access code.", T.good, T.bg)
+    text(2, 11, "Remote desktop, mouse/keyboard control, shared files, multi-PC tools, exploit lab and internal Mail.", T.fg, T.bg)
+    text(2, 13, "Remote administration requires consent; the in-game KL OS exploit lab is limited to KL OS Standard system files.", T.good, T.bg)
     local _, h = term.getSize()
     local go = button(2, h - 2, "Install selected edition", true)
     local cancel = button(30, h - 2, "Cancel", false)

@@ -19,7 +19,6 @@ function A.run()
     ui.text(2, h - 4, "Status: " .. status, T.fg, T.bg)
     local patch = ui.button(2, h - 2, exposed and "Apply patch" or "Re-open lab exposure")
     local back = ui.button(w - 8, h - 2, "Back")
-    ui.drawCursor()
     local ev = { os.pullEvent() }
     local kind, x, y = ui.pointer(ev)
     if kind == "click" then

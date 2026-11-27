@@ -1,11 +1,13 @@
--- KL OS / HackOS 2.2.0: intentionally exposed, read-only legacy diagnostic service.
+-- KL OS / HackOS 2.4.0: diagnostics plus a scoped, destructive Minecraft exploit-lab service.
 -- This creates a Minecraft-only exploit-lab mechanic. It does NOT provide a shell,
 -- arbitrary command execution, or unrestricted filesystem access.
 local V = {}
 V.PROTOCOL = "klos_legacy_diag_v1"
 local CONFIG = "/hackos/legacy-security.json"
 local net = require("os.network")
+local recovery = require("os.recovery")
 local sessions = {}
+local systemSessions = {}
 
 local function readConfig()
   fs.makeDir("/hackos")
@@ -66,7 +68,7 @@ local function getInfo()
   end
   return {
     os = getEdition(),
-    version = "2.3.0",
+    version = "2.4.0",
     hostname = net.getHostname(),
     ip = net.getIP(),
     computer = os.getComputerID(),
@@ -118,7 +120,57 @@ end
 local function handle(id, msg)
   if type(msg) ~= "table" then return end
   local cfg = readConfig()
-  if msg.kind == "PROBE" then
+  if msg.kind == "SYSTEM_PROBE" then
+    -- Deliberate in-game vulnerability: only KL OS Standard answers. This ignores
+    -- the normal Remote Access and Security Center toggles by design.
+    if getEdition() == "KL OS Standard" then
+      send(id, { kind = "SYSTEM_OFFER", vulnerable = true, computer = os.getComputerID(), hostname = net.getHostname(), ip = net.getIP(), edition = "KL OS Standard", attack = "KLOS-BOOT-OVERWRITE" })
+    end
+  elseif msg.kind == "SYSTEM_EXPLOIT" then
+    if getEdition() ~= "KL OS Standard" then
+      send(id, { kind = "SYSTEM_SESSION", ok = false, error = "This exploit lab targets KL OS Standard only." })
+      return
+    end
+    local token = tokenFor(id)
+    systemSessions[id] = { token = token, expires = os.clock() + 120 }
+    send(id, { kind = "SYSTEM_SESSION", ok = true, token = token, message = "KL OS Standard boot-file weakness reproduced. You can remove one system file; the target will blue-screen and can repair from its recovery image." })
+  elseif msg.kind == "SYSTEM_LIST" then
+    local session = systemSessions[id]
+    if getEdition() ~= "KL OS Standard" or not session or session.expires < os.clock() or msg.token ~= session.token then
+      systemSessions[id] = nil
+      send(id, { kind = "SYSTEM_LIST_RESULT", ok = false, error = "Exploit session expired or unsupported target." })
+      return
+    end
+    local present = {}
+    local indexFile = fs.open("/hackos/recovery/index.json", "r")
+    if indexFile then
+      local indexData = textutils.unserializeJSON(indexFile.readAll()); indexFile.close()
+      if type(indexData) == "table" and type(indexData.paths) == "table" then
+        for _, path in ipairs(indexData.paths) do
+          if recovery.isSystemPath(path) and fs.exists(path) and not fs.isDir(path) then present[#present + 1] = path end
+        end
+      end
+    end
+    table.sort(present)
+    send(id, { kind = "SYSTEM_LIST_RESULT", ok = true, files = present })
+  elseif msg.kind == "SYSTEM_DELETE" then
+    local session = systemSessions[id]
+    if getEdition() ~= "KL OS Standard" or not session or session.expires < os.clock() or msg.token ~= session.token then
+      systemSessions[id] = nil
+      send(id, { kind = "SYSTEM_DELETE_RESULT", ok = false, error = "Exploit session expired or unsupported target." })
+      return
+    end
+    local path = tostring(msg.path or "")
+    if not recovery.isSystemPath(path) or not fs.exists(path) or fs.isDir(path) then
+      send(id, { kind = "SYSTEM_DELETE_RESULT", ok = false, error = "Invalid system-file selection." })
+      return
+    end
+    send(id, { kind = "SYSTEM_DELETE_RESULT", ok = true, path = path, message = "System file removed. Target is entering recovery mode." })
+    sleep(0.2)
+    local removed, why = recovery.remoteDelete(path, id)
+    if removed then error("HACKOS_BSOD: SYSTEM FILE REMOVED BY HACKOS GOVERNMENT: " .. path, 0) end
+    send(id, { kind = "SYSTEM_DELETE_RESULT", ok = false, error = tostring(why) })
+  elseif msg.kind == "PROBE" then
     if not cfg.exposed then
       send(id, { kind = "OFFER", patched = true, computer = os.getComputerID(), hostname = net.getHostname(), ip = net.getIP() })
       return
@@ -126,7 +178,7 @@ local function handle(id, msg)
     send(id, {
       kind = "OFFER", vulnerable = true, computer = os.getComputerID(),
       hostname = net.getHostname(), ip = net.getIP(), service = "KL OS Legacy Diagnostics",
-      edition = getEdition(), version = "2.3.0", access = "READ-ONLY",
+      edition = getEdition(), version = "2.4.0", access = "READ-ONLY",
     })
   elseif msg.kind == "EXPLOIT" then
     if not cfg.exposed then

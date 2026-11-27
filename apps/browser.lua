@@ -154,7 +154,6 @@ function B.run()
   if not ok then st.page = errorPage("No modem", err) end
   while true do
     draw(st)
-    ui.drawCursor()
     local w = ui.size()
     local ev = { os.pullEvent() }
     if ev[1] == "mouse_scroll" then st.scroll = st.scroll + ev[2] * 2

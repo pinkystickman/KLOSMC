@@ -215,7 +215,6 @@ function A.run()
     local scanBtn = ui.button(2, h - 2, "Scan")
     local manageBtn = ui.button(12, h - 2, "Manage Selected")
     local backBtn = ui.button(w - 8, h - 2, "Back")
-    ui.drawCursor()
     local ev = { os.pullEvent() }
     if ev[1] == "mouse_scroll" then scroll = scroll + ev[2] * 2 end
     if ev[1] == "key" then

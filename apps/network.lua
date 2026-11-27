@@ -58,7 +58,6 @@ function A.run()
     local ipBtn = ui.button(18, h - 1, "Set IP")
     local hostBtn = ui.button(27, h - 1, "Set hostname")
     local back = ui.button(w - 8, h - 1, "Back")
-    ui.drawCursor()
     local ev = { os.pullEvent() }
     if ev[1] == "mouse_scroll" then scroll = scroll + ev[2] * 2 end
     local kind, x, y = ui.pointer(ev)

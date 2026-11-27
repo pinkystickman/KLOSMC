@@ -10,7 +10,7 @@ local APPS = {
   { name = "Server",    mod = "apps.server",   glyph = "[S]", desc = "Host services on this computer" },
   { name = "Remote",    mod = "apps.remote",   glyph = "[R]", desc = "Remote desktop, shell, files and power management" },
   { name = "Mail",      mod = "apps.mail",      glyph = "[@]", desc = "Send and receive mail over the in-game network" },
-  { name = "Hack",      mod = "apps.hack",     glyph = "[H]", desc = "Run the read-only KL OS exploit-lab scan" },
+  { name = "Hack",      mod = "apps.hack",     glyph = "[H]", desc = "Scan KL OS Standard and remove system files in the exploit lab" },
   { name = "Security",  mod = "apps.security", glyph = "[! ]", desc = "Patch this computer's legacy diagnostic exposure" },
   { name = "Terminal",  mod = "apps.shell",    glyph = "[>]", desc = "Run local CraftOS commands" },
 }
@@ -66,7 +66,7 @@ function M.run()
     ui.text(11, h - 1, "Ready  |  " .. net.getIP(), T.taskfg, T.task)
     local time = clock()
     ui.text(math.max(1, w - #time - 1), h - 1, time, T.taskfg, T.task)
-    ui.text(2, h, "Arrows: select  Enter: open  Mouse: click  Esc: menu", T.taskfg, T.task)
+    ui.text(2, h, "Arrows: select  Enter: open  Click: launch  Esc: Start menu", T.taskfg, T.task)
 
     local menuRects = {}
     if startOpen then
@@ -82,7 +82,6 @@ function M.run()
       menuRects.exit = ui.button(mx + 1, my + #APPS + 1, "Exit HackOS")
     end
 
-    ui.drawCursor()
     local ev = { os.pullEvent() }
     if ev[1] == "key" then
       if ev[2] == keys.up then selected = math.max(1, selected - 1)

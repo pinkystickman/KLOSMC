@@ -95,7 +95,6 @@ function S.run()
     for i = 1, 5 do ui.text(2, 9 + i, ui.pad(log[i] or "Waiting for clients...", w - 3), T.fg, T.bg) end
     ui.text(2, h - 2, "Keep this window open while clients connect.", T.fg, T.bg)
     local stop = ui.button(w - 10, h, "Stop server")
-    ui.drawCursor()
     local ev = { os.pullEvent() }
     if ev[1] == "rednet_message" then
       local id, msg, protocol = ev[2], ev[3], ev[4]

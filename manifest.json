@@ -1,10 +1,10 @@
 {
   "name": "KL OS / HackOS",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "editions": {
     "standard": {
       "name": "KL OS Standard",
-      "description": "Classic KL OS desktop with Files, Shell, Browser, optional authenticated remote administration, and HackOS internal Mail.",
+      "description": "Windows-style KL OS desktop with taskbar, Files, Shell, Browser, Network, Security, Remote, Mail and recovery.",
       "files": [
         {
           "source": "editions/standard/startup.lua",
@@ -65,12 +65,24 @@
         {
           "source": "apps/remote.lua",
           "target": "apps/remote.lua"
+        },
+        {
+          "source": "os/recovery.lua",
+          "target": "os/recovery.lua"
+        },
+        {
+          "source": "rescue.lua",
+          "target": "rescue.lua"
+        },
+        {
+          "source": "apps/network.lua",
+          "target": "apps/network.lua"
         }
       ]
     },
     "government": {
       "name": "HackOS Government",
-      "description": "HackOS Government with multi-PC remote desktop, mouse/keyboard control, file transfer, remote shell, power management and internal Mail.",
+      "description": "HackOS Government desktop with Remote Center, multi-PC administration, exploit lab, Mail and recovery.",
       "files": [
         {
           "source": "startup.lua",
@@ -143,13 +155,23 @@
         {
           "source": "apps/mail.lua",
           "target": "apps/mail.lua"
+        },
+        {
+          "source": "os/recovery.lua",
+          "target": "os/recovery.lua"
+        },
+        {
+          "source": "rescue.lua",
+          "target": "rescue.lua"
         }
       ]
     }
   },
   "notes": {
-    "remote_desktop": "Remote Desktop uses an in-game terminal mirror and rednet input events. Target must have Remote Access enabled and valid access code.",
+    "remote_desktop": "Remote Desktop mirrors the CC:Tweaked terminal and forwards keyboard and real mouse events. Normal remote administration requires the target to enable Remote Access and share its access code.",
     "file_transfer": "Remote file transfer is restricted to /public; files are limited to 8192 bytes.",
-    "mail": "HackOS internal mail is rednet mail between computers on the same reachable network. It is not SMTP or external Internet email."
+    "mail": "HackOS internal mail uses rednet between reachable computers; it is not external SMTP or Gmail.",
+    "recovery": "Installer stores recovery copies under /hackos/recovery/files. Deleting a system file triggers a blue-screen-style recovery flow. Press R to restore missing files or run rescue.lua from CraftOS.",
+    "exploit_lab": "Government includes a deliberately fictional Minecraft-only KLOS-BOOT-OVERWRITE exploit against KL OS Standard 2.4.0+. It ignores that OS normal Remote Access and Security Center settings, removes only an OS file, and forces local recovery. It is not a general-purpose exploit."
   }
 }
