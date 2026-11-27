@@ -1,6 +1,6 @@
 -- KL OS / HackOS edition installer. Run: wget <repo>/install.lua install.lua ; install.lua
 local BASE_URL = "https://raw.githubusercontent.com/pinkystickman/KLOSMC/main/"
-local VERSION = "2.5.0"
+local VERSION = "2.6.0"
 
 local function theme()
   local colour = term.isColor()
@@ -158,9 +158,9 @@ local function chooseScreen()
   while true do
     draw("Choose your edition", "Select the operating system for this computer.")
     local std = button(2, 6, "STANDARD / KL OS", selected == "standard", 22)
-    text(2, 7, "Classic KL OS with files, shell, browser, Mail and optional Remote.", T.fg, T.bg)
+    text(2, 7, "KL OS desktop with Files, KL Store, KL Maker, Browser, Mail and Website Hosting.", T.fg, T.bg)
     local gov = button(2, 9, "GOVERNMENT / HACKOS", selected == "government", 24)
-    text(2, 10, "Windows-style desktop, network tools, Remote Center and Mail.", T.fg, T.bg)
+    text(2, 10, "Windows-style desktop, KL Store, KL Maker, network tools, Remote Center and Mail.", T.fg, T.bg)
     text(2, 11, "Remote desktop, mouse/keyboard control, shared files, multi-PC tools, exploit lab and internal Mail.", T.fg, T.bg)
     text(2, 13, "Remote administration requires consent; the in-game KL OS exploit lab is limited to KL OS Standard system files.", T.good, T.bg)
     local _, h = term.getSize()

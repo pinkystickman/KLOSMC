@@ -1,10 +1,10 @@
 {
   "name": "KL OS / HackOS",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "editions": {
     "standard": {
       "name": "KL OS Standard",
-      "description": "Windows 11-inspired KL OS desktop with taskbar-only apps, Files, Lua runner, HTML Website Studio, rednet web hosting, Mail, Remote tools and OS updates.",
+      "description": "Windows 11-inspired KL OS desktop with taskbar-only apps, Files, Lua runner, HTML Website Studio, rednet web hosting, Mail, Remote tools and OS updates. KL Store app catalogue and KL Maker visual website/app builder.",
       "files": [
         {
           "source": "editions/standard/startup.lua",
@@ -97,12 +97,40 @@
         {
           "source": "os/updater.lua",
           "target": "os/updater.lua"
+        },
+        {
+          "source": "os/appregistry.lua",
+          "target": "os/appregistry.lua"
+        },
+        {
+          "source": "apps/store.lua",
+          "target": "apps/store.lua"
+        },
+        {
+          "source": "apps/maker.lua",
+          "target": "apps/maker.lua"
+        },
+        {
+          "source": "store/packages/calculator.lua",
+          "target": "store/packages/calculator.lua"
+        },
+        {
+          "source": "store/packages/notes.lua",
+          "target": "store/packages/notes.lua"
+        },
+        {
+          "source": "store/packages/monitor.lua",
+          "target": "store/packages/monitor.lua"
+        },
+        {
+          "source": "store/packages/dice.lua",
+          "target": "store/packages/dice.lua"
         }
       ]
     },
     "government": {
       "name": "HackOS Government",
-      "description": "Windows 11-inspired HackOS desktop with taskbar-only apps, Remote Center, multi-PC administration, exploit lab, HTML Website Studio, persistent rednet web hosting, Mail and OS updates.",
+      "description": "Windows 11-inspired HackOS desktop with taskbar-only apps, Remote Center, multi-PC administration, exploit lab, HTML Website Studio, persistent rednet web hosting, Mail and OS updates. KL Store app catalogue and KL Maker visual website/app builder.",
       "files": [
         {
           "source": "startup.lua",
@@ -199,6 +227,34 @@
         {
           "source": "os/updater.lua",
           "target": "os/updater.lua"
+        },
+        {
+          "source": "os/appregistry.lua",
+          "target": "os/appregistry.lua"
+        },
+        {
+          "source": "apps/store.lua",
+          "target": "apps/store.lua"
+        },
+        {
+          "source": "apps/maker.lua",
+          "target": "apps/maker.lua"
+        },
+        {
+          "source": "store/packages/calculator.lua",
+          "target": "store/packages/calculator.lua"
+        },
+        {
+          "source": "store/packages/notes.lua",
+          "target": "store/packages/notes.lua"
+        },
+        {
+          "source": "store/packages/monitor.lua",
+          "target": "store/packages/monitor.lua"
+        },
+        {
+          "source": "store/packages/dice.lua",
+          "target": "store/packages/dice.lua"
         }
       ]
     }
@@ -206,13 +262,16 @@
   "notes": {
     "desktop": "Windows-inspired desktop with taskbar-only app shortcuts, Start menu, right-click creation context menu, title bars and a taskbar action to return from the current maximised app view. No custom cursor is drawn.",
     "file_execution": "Files can launch Lua scripts with CraftOS shell.run; text, config and HTML files open in the built-in CraftOS editor.",
-    "updates": "OS Update downloads the selected edition from the GitHub main branch into staging, then replaces system files with rollback copies. /Documents, /www and /hackos/mailbox.json are preserved.",
+    "updates": "OS Update stages and rolls back system files. Documents, website content, mailbox data, user-created apps in /Applications and the installed-app registry are not part of the system file list and are preserved.",
     "websites": "Website Studio creates and edits HTML pages under /www. The background rednet website service hosts index.html and other .html files for both KL Browser and HackOS Browser. It supports a simple HTML subset: title, headings, paragraphs, links, lists and line breaks; CSS and JavaScript are not executed.",
     "hosting": "Enable hosting in Website Server or Website Studio. The server stays active in the OS background service while you continue to use other apps.",
     "remote_desktop": "Remote Desktop requires both computers to support the CC:Tweaked terminal APIs. Mouse hover is not available from the platform; button, drag and keyboard events are forwarded.",
     "file_transfer": "Remote file transfer is restricted to /public; files are limited to 8192 bytes.",
     "mail": "HackOS internal mail uses rednet between reachable computers; it is not external SMTP or Gmail.",
     "recovery": "Installer stores recovery copies under /hackos/recovery/files. Deleting a system file triggers a blue-screen-style recovery flow. Press R to restore missing files or run rescue.lua from CraftOS.",
-    "exploit_lab": "Government includes a deliberately fictional Minecraft-only KLOS-BOOT-OVERWRITE exploit against KL OS Standard system files. It is not a general-purpose exploit."
+    "exploit_lab": "Government includes a deliberately fictional Minecraft-only KLOS-BOOT-OVERWRITE exploit against KL OS Standard system files. It is not a general-purpose exploit.",
+    "app_store": "KL Store contains offline packages (Calculator, Notes, System Monitor and Dice Roller). Apps install into /Applications, register in the Start menu and are automatically pinned to the taskbar after core shortcuts when display space allows.",
+    "maker": "KL Maker is a visual component builder. Website projects export HTML into /www; app projects export Lua programs into /Applications and register them in the Start menu. Projects are saved in /Documents/KLMaker.",
+    "apps": "Custom and Store-installed apps are listed in Start and pinned to the taskbar when space allows. User applications are stored in /Applications; the app registry is /Applications/installed.json."
   }
 }
