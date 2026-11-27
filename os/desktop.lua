@@ -13,7 +13,7 @@ local BUILT_IN = {
   { name="Website Studio", mod="apps.site", glyph="W", desc="Create, edit and publish your own website" },
   { name="Server", mod="apps.server", glyph="V", desc="Host your website on this computer" },
   { name="Network", mod="apps.network", glyph="N", desc="IP address and connected computers" },
-  { name="Remote", mod="apps.remote", glyph="R", desc="Remote desktop and multi-PC administration" },
+  { name="Remote", mod="apps.remote", glyph="R", desc="Live remote screen, keyboard/mouse control and multi-PC administration" },
   { name="Mail", mod="apps.mail", glyph="E", desc="Internal network email" },
   { name="Hack", mod="apps.hack", glyph="H", desc="Minecraft-only KL OS exploit lab" },
   { name="Security", mod="apps.security", glyph="C", desc="Local security and diagnostic settings" },
@@ -87,7 +87,7 @@ local function drawDesktop(apps, startOpen, context, selected, status)
   ui.text(3, 3, "GOVERNMENT EDITION", colors.lightBlue, colors.blue)
   ui.text(3, 5, "Your computer. Your network. Your workspace.", colors.white, T.desktop)
   ui.text(3, 7, "Right-click anywhere to create a file or folder.", colors.lightGray, T.desktop)
-  ui.text(3, 8, "KL Store installs apps. KL Maker builds websites and apps.", colors.lightGray, T.desktop)
+  ui.text(3, 8, "KL Store installs apps. KL Maker builds websites and apps. Hack Console is available in Government.", colors.lightGray, T.desktop)
   if status and status ~= "" then ui.text(3, h - 2, status, colors.white, T.desktop) end
   ui.fill(1, h, w, 1, T.task, T.taskfg)
   local start = ui.button(1, h, "Start", startOpen)
@@ -113,7 +113,7 @@ local function drawDesktop(apps, startOpen, context, selected, status)
       local i = first + row - 1
       menu[#menu + 1] = { index=i, rect=ui.button(mx + 1, my + row, apps[i].glyph .. "  " .. apps[i].name, selected == i) }
     end
-    ui.text(mx + 1, math.min(h - 1, my + visible + 1), "v2.6.0  |  Power: Q", T.fg, T.panel)
+    ui.text(mx + 1, math.min(h - 1, my + visible + 1), "v2.7.1  |  Power: Q", T.fg, T.panel)
   end
 
   local contextRects = {}

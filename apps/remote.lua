@@ -1,4 +1,4 @@
--- Government Remote Center: multi-PC dashboard, remote desktop, shell, files and power.
+-- KL OS / HackOS Remote Center: multi-PC dashboard, live desktop, shell, files and power.
 local ui = require("os.ui")
 local net = require("os.network")
 local remote = require("os.remote")
@@ -25,39 +25,67 @@ local function hasService(peer, name)
   return false
 end
 
--- The remote display is cropped at the lower/right edge when resolutions differ,
--- so preserve the visible top-left character coordinates for mouse input.
-local function scalePoint(x, y, localW, localH, remoteW, remoteH)
-  local rx = math.max(1, math.min(remoteW, math.floor(x)))
-  local ry = math.max(1, math.min(remoteH, math.floor(y)))
-  return rx, ry
+-- Map coordinates between the local viewer and the remote computer.
+-- The frame is scaled to the full local terminal, so input uses the inverse mapping.
+local function mapCoord(value, fromSize, toSize)
+  fromSize, toSize = math.max(1, tonumber(fromSize) or 1), math.max(1, tonumber(toSize) or 1)
+  value = math.max(1, math.min(fromSize, tonumber(value) or 1))
+  if fromSize == 1 or toSize == 1 then return 1 end
+  return math.max(1, math.min(toSize, math.floor(((value - 1) / (fromSize - 1)) * (toSize - 1) + 1.5)))
 end
 
-local function drawFrame(frame, status)
-  if type(frame) ~= "table" or type(frame.lines) ~= "table" then return end
-  local w, h = term.getSize()
-  term.setBackgroundColor(colors.black); term.setTextColor(colors.white); term.clear()
-  local rows = math.min(h, tonumber(frame.height) or #frame.lines)
-  for y = 1, rows do
-    local row = frame.lines[y]
-    if type(row) == "table" then
+local function scalePoint(x, y, localW, localH, remoteW, remoteH)
+  return mapCoord(x, localW, remoteW), mapCoord(y, localH, remoteH)
+end
+
+local function drawFrame(frame, cache)
+  if type(frame) ~= "table" or type(frame.lines) ~= "table" then return cache end
+  local localW, localH = term.getSize()
+  local sourceW = math.max(1, tonumber(frame.width) or localW)
+  local sourceH = math.max(1, tonumber(frame.height) or #frame.lines)
+  local isColour = term.isColor() and term.blit ~= nil
+
+  if not cache or cache.width ~= localW or cache.height ~= localH then
+    term.setBackgroundColor(colors.black); term.setTextColor(colors.white); term.clear()
+    cache = { width = localW, height = localH, rows = {} }
+  end
+
+  term.setCursorBlink(false)
+  for y = 1, localH do
+    local sourceY = mapCoord(y, localH, sourceH)
+    local row = frame.lines[sourceY] or {}
+    local sourceText = tostring(row.text or "")
+    local sourceFG = tostring(row.fg or string.rep("0", sourceW))
+    local sourceBG = tostring(row.bg or string.rep("f", sourceW))
+    if #sourceText < sourceW then sourceText = sourceText .. string.rep(" ", sourceW - #sourceText) end
+    if #sourceFG < sourceW then sourceFG = sourceFG .. string.rep("0", sourceW - #sourceFG) end
+    if #sourceBG < sourceW then sourceBG = sourceBG .. string.rep("f", sourceW - #sourceBG) end
+
+    local outText, outFG, outBG = {}, {}, {}
+    for x = 1, localW do
+      local sourceX = mapCoord(x, localW, sourceW)
+      outText[x] = sourceText:sub(sourceX, sourceX)
+      outFG[x] = sourceFG:sub(sourceX, sourceX)
+      outBG[x] = sourceBG:sub(sourceX, sourceX)
+    end
+    local textLine, fgLine, bgLine = table.concat(outText), table.concat(outFG), table.concat(outBG)
+    local fingerprint = textLine .. "\0" .. fgLine .. "\0" .. bgLine
+    if cache.rows[y] ~= fingerprint then
       term.setCursorPos(1, y)
-      local text = tostring(row.text or "")
-      local fg, bg = tostring(row.fg or string.rep("0", #text)), tostring(row.bg or string.rep("f", #text))
-      local maxLen = math.min(w, #text, #fg, #bg)
-      if maxLen > 0 then
-        if term.isColor() then term.blit(text:sub(1, maxLen), fg:sub(1, maxLen), bg:sub(1, maxLen))
-        else term.write(text:sub(1, maxLen)) end
-      end
+      if isColour then term.blit(textLine, fgLine, bgLine)
+      else term.setBackgroundColor(colors.black); term.setTextColor(colors.white); term.write(textLine) end
+      cache.rows[y] = fingerprint
     end
   end
+
   local cx, cy = tonumber(frame.cursorX), tonumber(frame.cursorY)
-  if cx and cy and cx >= 1 and cx <= w and cy >= 1 and cy <= h then
-    term.setCursorPos(cx, cy)
+  if cx and cy and cx >= 1 and cx <= sourceW and cy >= 1 and cy <= sourceH then
+    term.setCursorPos(mapCoord(cx, sourceW, localW), mapCoord(cy, sourceH, localH))
     term.setCursorBlink(frame.cursorBlink == true)
   else
     term.setCursorBlink(false)
   end
+  return cache
 end
 
 local function sendInput(peer, pin, event, args)
@@ -66,41 +94,70 @@ end
 
 local function remoteDesktop(peer, pin)
   local lastFrame, targetW, targetH = nil, nil, nil
-  local lastResponse = os.clock()
-  local timer = os.startTimer(0.2)
   local localW, localH = term.getSize()
+  local renderCache, lastResponse = nil, os.clock()
+  local nextRequest, pendingRequest, lastSent = 0, nil, 0
+  local timer = os.startTimer(0.2)
+
+  term.setBackgroundColor(colors.black); term.setTextColor(colors.white); term.setCursorBlink(false); term.clear()
+  term.setCursorPos(2, 2); term.write("Connecting to " .. tostring(peer.hostname) .. "...")
+  term.setCursorPos(2, 4); term.write("Live screen will appear here. Click to control the remote computer.")
+  term.setCursorPos(2, 6); term.write("Keyboard, right-click, dragging and scrolling are forwarded.")
+  term.setCursorPos(2, 8); term.write("Press F2 to disconnect. Escape is sent to the remote computer.")
+
   while true do
     local ev = { os.pullEvent() }
     if ev[1] == "timer" and ev[2] == timer then
-      requestID = requestID + 1
-      rednet.send(peer.id, { kind = "SCREEN", pin = pin, request = requestID }, remote.PROTOCOL)
-      timer = os.startTimer(0.2)
-      if os.clock() - lastResponse > 4 then
-        if lastFrame then drawFrame(lastFrame, nil)
-        else
-          term.setBackgroundColor(colors.black); term.setTextColor(colors.white); term.clear(); term.setCursorPos(2, 2)
-          term.write("Waiting for " .. peer.hostname .. " screen...")
-          term.setCursorPos(2, 4); term.write("Check the network and access code.")
-          term.setCursorPos(2, 6); term.write("Press ESC or F2 to disconnect.")
-        end
+      local now = os.clock()
+      if not pendingRequest or now - lastSent > 1.5 then
+        nextRequest = nextRequest + 1
+        pendingRequest = nextRequest
+        lastSent = now
+        rednet.send(peer.id, { kind = "SCREEN", pin = pin, request = pendingRequest }, remote.PROTOCOL)
       end
+      timer = os.startTimer(0.2)
+      if not lastFrame and now - lastResponse > 4 then
+        term.setCursorPos(2, 10); term.setTextColor(colors.orange or colors.yellow); term.write("No screen response yet. Check the target OS and modem connection.")
+        term.setTextColor(colors.white)
+      end
+
     elseif ev[1] == "rednet_message" and ev[2] == peer.id and ev[4] == remote.PROTOCOL and type(ev[3]) == "table" then
       local msg = ev[3]
-      if msg.kind == "SCREEN_RESULT" then
+      if msg.kind == "SCREEN_RESULT" and pendingRequest ~= nil and msg.request == pendingRequest then
+        pendingRequest = nil
         lastResponse = os.clock()
         if msg.ok and type(msg.frame) == "table" then
-          lastFrame = msg.frame; targetW = tonumber(msg.frame.width) or localW; targetH = tonumber(msg.frame.height) or localH
-          drawFrame(lastFrame, peer.hostname .. "  |  " .. peer.ip)
-        elseif msg.error then drawFrame(lastFrame or {}, msg.error) end
+          lastFrame = msg.frame
+          targetW = math.max(1, tonumber(msg.frame.width) or localW)
+          targetH = math.max(1, tonumber(msg.frame.height) or localH)
+          renderCache = drawFrame(lastFrame, renderCache)
+        elseif msg.error then
+          term.setBackgroundColor(colors.black); term.setTextColor(colors.red); term.clear(); term.setCursorPos(2, 2)
+          term.write("Remote screen error")
+          term.setCursorPos(2, 4); term.write(tostring(msg.error):sub(1, math.max(1, localW - 4)))
+          term.setTextColor(colors.white); term.setCursorPos(2, 6); term.write("Press F2 to disconnect.")
+        end
       end
+
+    elseif ev[1] == "term_resize" then
+      localW, localH = term.getSize()
+      renderCache = nil
+      if lastFrame then renderCache = drawFrame(lastFrame, renderCache) end
+
     elseif ev[1] == "key" then
-      if ev[2] == keys.escape or ev[2] == keys.f2 then
-        term.setBackgroundColor(colors.black); term.setTextColor(colors.white); term.clear(); return
+      if ev[2] == keys.f2 then
+        term.setCursorBlink(false); term.setBackgroundColor(colors.black); term.setTextColor(colors.white); term.clear()
+        return
       end
       sendInput(peer, pin, "key", { ev[2] })
-    elseif ev[1] == "key_up" then sendInput(peer, pin, "key_up", { ev[2] })
-    elseif ev[1] == "char" then sendInput(peer, pin, "char", { ev[2] })
-    elseif ev[1] == "paste" then sendInput(peer, pin, "paste", { ev[2] })
+
+    elseif ev[1] == "key_up" then
+      sendInput(peer, pin, "key_up", { ev[2] })
+    elseif ev[1] == "char" then
+      sendInput(peer, pin, "char", { ev[2] })
+    elseif ev[1] == "paste" then
+      sendInput(peer, pin, "paste", { ev[2] })
+
     elseif ev[1] == "mouse_click" or ev[1] == "mouse_drag" or ev[1] == "mouse_up" then
       local tw, th = targetW or localW, targetH or localH
       local x, y = scalePoint(ev[3], ev[4], localW, localH, tw, th)

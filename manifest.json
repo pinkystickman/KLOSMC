@@ -1,10 +1,10 @@
 {
   "name": "KL OS / HackOS",
-  "version": "2.6.0",
+  "version": "2.7.1",
   "editions": {
     "standard": {
       "name": "KL OS Standard",
-      "description": "Windows 11-inspired KL OS desktop with taskbar-only apps, Files, Lua runner, HTML Website Studio, rednet web hosting, Mail, Remote tools and OS updates. KL Store app catalogue and KL Maker visual website/app builder.",
+      "description": "KL OS Standard with restored KL Store, KL Maker, Files, Browser, Mail, Website Hosting, OS Update and interactive authenticated Remote Desktop.",
       "files": [
         {
           "source": "editions/standard/startup.lua",
@@ -130,7 +130,7 @@
     },
     "government": {
       "name": "HackOS Government",
-      "description": "Windows 11-inspired HackOS desktop with taskbar-only apps, Remote Center, multi-PC administration, exploit lab, HTML Website Studio, persistent rednet web hosting, Mail and OS updates. KL Store app catalogue and KL Maker visual website/app builder.",
+      "description": "HackOS Government with restored Hack Console, KL Store, KL Maker, Remote Center, interactive multi-PC Remote Desktop, file transfer, power management, Mail and website hosting.",
       "files": [
         {
           "source": "startup.lua",
@@ -265,13 +265,14 @@
     "updates": "OS Update stages and rolls back system files. Documents, website content, mailbox data, user-created apps in /Applications and the installed-app registry are not part of the system file list and are preserved.",
     "websites": "Website Studio creates and edits HTML pages under /www. The background rednet website service hosts index.html and other .html files for both KL Browser and HackOS Browser. It supports a simple HTML subset: title, headings, paragraphs, links, lists and line breaks; CSS and JavaScript are not executed.",
     "hosting": "Enable hosting in Website Server or Website Studio. The server stays active in the OS background service while you continue to use other apps.",
-    "remote_desktop": "Remote Desktop requires both computers to support the CC:Tweaked terminal APIs. Mouse hover is not available from the platform; button, drag and keyboard events are forwarded.",
+    "remote_desktop": "Authenticated interactive remote desktop for updated KL OS / HackOS computers. The controller receives live terminal frames and forwards keyboard, paste, click, right-click, drag, mouse-up and scroll events. Screen cells are scaled to the controller terminal. CC:Tweaked does not expose a passive mouse-hover event, so pointer position follows clicks/drags rather than free hover.",
     "file_transfer": "Remote file transfer is restricted to /public; files are limited to 8192 bytes.",
     "mail": "HackOS internal mail uses rednet between reachable computers; it is not external SMTP or Gmail.",
     "recovery": "Installer stores recovery copies under /hackos/recovery/files. Deleting a system file triggers a blue-screen-style recovery flow. Press R to restore missing files or run rescue.lua from CraftOS.",
     "exploit_lab": "Government includes a deliberately fictional Minecraft-only KLOS-BOOT-OVERWRITE exploit against KL OS Standard system files. It is not a general-purpose exploit.",
     "app_store": "KL Store contains offline packages (Calculator, Notes, System Monitor and Dice Roller). Apps install into /Applications, register in the Start menu and are automatically pinned to the taskbar after core shortcuts when display space allows.",
     "maker": "KL Maker is a visual component builder. Website projects export HTML into /www; app projects export Lua programs into /Applications and register them in the Start menu. Projects are saved in /Documents/KLMaker.",
-    "apps": "Custom and Store-installed apps are listed in Start and pinned to the taskbar when space allows. User applications are stored in /Applications; the app registry is /Applications/installed.json."
+    "apps": "Custom and Store-installed apps are listed in Start and pinned to the taskbar when space allows. User applications are stored in /Applications; the app registry is /Applications/installed.json.",
+    "restored_apps": "Government edition includes Hack Console, KL Store and KL Maker. Both editions include KL Store and KL Maker plus Calculator, Notes, System Monitor and Dice Roller packages. App entries and package paths are included in both edition manifests where applicable."
   }
 }

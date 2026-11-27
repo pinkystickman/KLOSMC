@@ -1,4 +1,4 @@
--- HackOS remote administration service for CC:Tweaked.
+-- KL OS / HackOS remote administration and live terminal screen service for CC:Tweaked.
 -- Remote actions require the target computer's locally enabled access code.
 local R = {}
 R.PROTOCOL = "hackos_remote_v1"
@@ -138,16 +138,33 @@ local function execute(command)
 end
 
 local function getFrame()
+  -- startup.lua redirects the OS to a CC:Tweaked window, which exposes getLine().
+  -- Capture that shared terminal buffer so the controller sees the actual desktop/app UI.
   local t = term.current()
-  if not t or not t.getLine then return nil, "Screen capture is unavailable. Reboot this updated OS." end
-  local w, h = t.getSize()
-  local lines = {}
-  for y = 1, h do
-    local text, fg, bg = t.getLine(y)
-    lines[y] = { text = text or (" "):rep(w), fg = fg or ("0"):rep(w), bg = bg or ("f"):rep(w) }
+  if not t or type(t.getLine) ~= "function" then
+    return nil, "Screen capture is unavailable. Reinstall this edition and reboot."
   end
-  local cx, cy = t.getCursorPos()
-  return { width = w, height = h, lines = lines, cursorX = cx, cursorY = cy, cursorBlink = t.getCursorBlink and t.getCursorBlink() or false }
+  local ok, frame = pcall(function()
+    local w, h = t.getSize()
+    if type(w) ~= "number" or type(h) ~= "number" or w < 1 or h < 1 or w > 200 or h > 80 then
+      error("Unsupported terminal dimensions.")
+    end
+    local lines = {}
+    for y = 1, h do
+      local lineText, fg, bg = t.getLine(y)
+      lineText, fg, bg = tostring(lineText or ""), tostring(fg or ""), tostring(bg or "")
+      if #lineText < w then lineText = lineText .. string.rep(" ", w - #lineText) end
+      if #fg < w then fg = fg .. string.rep("0", w - #fg) end
+      if #bg < w then bg = bg .. string.rep("f", w - #bg) end
+      lines[y] = { text = lineText:sub(1, w), fg = fg:sub(1, w), bg = bg:sub(1, w) }
+    end
+    local cx, cy = t.getCursorPos()
+    local blink = false
+    if type(t.getCursorBlink) == "function" then blink = t.getCursorBlink() end
+    return { width = w, height = h, lines = lines, cursorX = cx, cursorY = cy, cursorBlink = blink == true }
+  end)
+  if not ok then return nil, "Screen capture failed: " .. tostring(frame) end
+  return frame
 end
 
 local function safePublicName(name)

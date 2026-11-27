@@ -106,7 +106,7 @@ local function draw(apps, startOpen, context, selected)
       local i = first + row - 1
       menu[#menu + 1] = { index=i, rect=ui.button(mx + 1, my + row, apps[i].glyph .. "  " .. apps[i].name, selected == i) }
     end
-    ui.text(mx + 1, math.min(h - 1, my + visible + 1), "v2.6.0  |  Esc: close", T.fg, T.panel)
+    ui.text(mx + 1, math.min(h - 1, my + visible + 1), "v2.7.1  |  Esc: close", T.fg, T.panel)
   end
 
   local contextRects = {}
