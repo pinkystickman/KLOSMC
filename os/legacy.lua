@@ -6,6 +6,7 @@ V.PROTOCOL = "klos_legacy_diag_v1"
 local CONFIG = "/hackos/legacy-security.json"
 local net = require("os.network")
 local recovery = require("os.recovery")
+local privacy = require("os.privacy")
 local sessions = {}
 local systemSessions = {}
 
@@ -35,12 +36,24 @@ function V.getStatus()
   return readConfig().exposed
 end
 
+function V.revokeLabSessions()
+  sessions, systemSessions = {}, {}
+  return true
+end
+
 function V.patch()
-  return writeConfig({ exposed = false })
+  local ok, err = writeConfig({ exposed = false })
+  if ok then
+    sessions, systemSessions = {}, {}
+    privacy.log("GUEST_DIAGNOSTICS_PATCHED", "Read-only guest diagnostics and active lab sessions disabled")
+  end
+  return ok, err
 end
 
 function V.unpatch()
-  return writeConfig({ exposed = true })
+  local ok, err = writeConfig({ exposed = true })
+  if ok then privacy.log("GUEST_DIAGNOSTICS_EXPOSED", "Read-only legacy diagnostics enabled for lab use") end
+  return ok, err
 end
 
 local function getEdition()
@@ -123,10 +136,17 @@ local function handle(id, msg)
   if msg.kind == "SYSTEM_PROBE" then
     -- Deliberate in-game vulnerability: only KL OS Standard answers. This ignores
     -- the normal Remote Access and Security Center toggles by design.
-    if getEdition() == "KL OS Standard" then
+    if getEdition() == "KL OS Standard" and privacy.get("exploit_lab") then
       send(id, { kind = "SYSTEM_OFFER", vulnerable = true, computer = os.getComputerID(), hostname = net.getHostname(), ip = net.getIP(), edition = "KL OS Standard", attack = "KLOS-BOOT-OVERWRITE" })
+    elseif getEdition() == "KL OS Standard" then
+      privacy.log("LAB_PROBE_BLOCKED", "System exploit probe blocked by local privacy setting")
     end
   elseif msg.kind == "SYSTEM_EXPLOIT" then
+    privacy.log("LAB_EXPLOIT_ATTEMPT", "Government lab exploit requested by computer #" .. tostring(id))
+    if not privacy.get("exploit_lab") then
+      send(id, { kind = "SYSTEM_SESSION", ok = false, error = "The KL OS exploit lab is disabled in Security & Privacy." })
+      return
+    end
     if getEdition() ~= "KL OS Standard" then
       send(id, { kind = "SYSTEM_SESSION", ok = false, error = "This exploit lab targets KL OS Standard only." })
       return
@@ -136,7 +156,7 @@ local function handle(id, msg)
     send(id, { kind = "SYSTEM_SESSION", ok = true, token = token, message = "KL OS Standard boot-file weakness reproduced. You can remove one system file; the target will blue-screen and can repair from its recovery image." })
   elseif msg.kind == "SYSTEM_LIST" then
     local session = systemSessions[id]
-    if getEdition() ~= "KL OS Standard" or not session or session.expires < os.clock() or msg.token ~= session.token then
+    if not privacy.get("exploit_lab") or getEdition() ~= "KL OS Standard" or not session or session.expires < os.clock() or msg.token ~= session.token then
       systemSessions[id] = nil
       send(id, { kind = "SYSTEM_LIST_RESULT", ok = false, error = "Exploit session expired or unsupported target." })
       return
@@ -155,7 +175,7 @@ local function handle(id, msg)
     send(id, { kind = "SYSTEM_LIST_RESULT", ok = true, files = present })
   elseif msg.kind == "SYSTEM_DELETE" then
     local session = systemSessions[id]
-    if getEdition() ~= "KL OS Standard" or not session or session.expires < os.clock() or msg.token ~= session.token then
+    if not privacy.get("exploit_lab") or getEdition() ~= "KL OS Standard" or not session or session.expires < os.clock() or msg.token ~= session.token then
       systemSessions[id] = nil
       send(id, { kind = "SYSTEM_DELETE_RESULT", ok = false, error = "Exploit session expired or unsupported target." })
       return
@@ -167,6 +187,7 @@ local function handle(id, msg)
     end
     send(id, { kind = "SYSTEM_DELETE_RESULT", ok = true, path = path, message = "System file removed. Target is entering recovery mode." })
     sleep(0.2)
+    privacy.log("LAB_SYSTEM_FILE_DELETE", "System file selected for removal: " .. path .. " by computer #" .. tostring(id))
     local removed, why = recovery.remoteDelete(path, id)
     if removed then error("HACKOS_BSOD: SYSTEM FILE REMOVED BY HACKOS GOVERNMENT: " .. path, 0) end
     send(id, { kind = "SYSTEM_DELETE_RESULT", ok = false, error = tostring(why) })

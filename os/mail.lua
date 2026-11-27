@@ -4,6 +4,7 @@ M.PROTOCOL = "hackos_mail_v1"
 local CFG = "/hackos/mail.cfg"
 local BOX = "/hackos/mailbox.json"
 local net = require("os.network")
+local privacy = require("os.privacy")
 local requestID = 0
 
 local function readConfig()
@@ -79,6 +80,11 @@ end
 
 local function handle(id, msg)
   if type(msg) ~= "table" or msg.kind ~= "SEND" then return end
+  if not privacy.get("mail_receive") then
+    privacy.log("MAIL_BLOCKED", "Incoming network mail blocked from computer #" .. tostring(id))
+    rednet.send(id, { kind = "ACK", ok = false, error = "Incoming network mail is disabled by this computer's privacy settings.", request = msg.request }, M.PROTOCOL)
+    return
+  end
   local ok, why = validMessage(msg.message)
   if not ok then
     rednet.send(id, { kind = "ACK", ok = false, error = why, request = msg.request }, M.PROTOCOL)
@@ -88,6 +94,7 @@ local function handle(id, msg)
   item.receivedAt = textutils.formatTime(os.time(), true)
   item.fromComputer = id
   local saved, err = addMessage("inbox", item)
+  if saved then privacy.log("MAIL_RECEIVED", "Message accepted from computer #" .. tostring(id)) end
   rednet.send(id, { kind = "ACK", ok = saved, error = err, request = msg.request }, M.PROTOCOL)
 end
 
@@ -99,6 +106,10 @@ local function splitAddress(address)
 end
 
 function M.send(to, subject, body)
+  if not privacy.get("mail_send") then
+    privacy.log("MAIL_SEND_BLOCKED", "Outgoing mail blocked by privacy settings")
+    return false, "Outgoing network mail is disabled in Security & Privacy."
+  end
   to = tostring(to or ""):lower()
   subject = tostring(subject or "")
   body = tostring(body or "")
@@ -113,7 +124,7 @@ function M.send(to, subject, body)
   if host == net.getHostname():lower() then
     if to ~= M.getAddress():lower() then return false, "That mailbox does not exist on this computer." end
     local saved, err = addMessage("inbox", message)
-    if saved then addMessage("sent", message) end
+    if saved then addMessage("sent", message); privacy.log("MAIL_SENT", "Local mailbox message saved") end
     return saved, err
   end
   local peers, err = net.discover(1.8)
@@ -132,6 +143,7 @@ function M.send(to, subject, body)
       if not response.ok then return false, response.error or "Message rejected." end
       local saved, saveErr = addMessage("sent", message)
       if not saved then return false, "Delivered, but could not save Sent folder: " .. tostring(saveErr) end
+      privacy.log("MAIL_SENT", "Message delivered to " .. to)
       return true, "Delivered to " .. to
     end
   end
@@ -147,7 +159,7 @@ function M.run()
         if event == "rednet_message" then
           local id, msg, protocol = a, b, c
           if protocol == M.PROTOCOL and id ~= os.getComputerID() then handle(id, msg)
-          elseif protocol == net.PROTOCOL and type(msg) == "table" and msg.kind == "DISCOVER" then
+          elseif protocol == net.PROTOCOL and type(msg) == "table" and msg.kind == "DISCOVER" and privacy.get("network_discovery") then
             rednet.send(id, { kind = "OFFER", version = 1, ip = net.getIP(), hostname = net.getHostname(), mailAddress = M.getAddress(), services = { "MAIL" } }, net.PROTOCOL)
           end
         end

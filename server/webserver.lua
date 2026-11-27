@@ -2,6 +2,7 @@
 local ui = require("os.ui")
 local net = require("os.network")
 local Site = require("os.site")
+local privacy = require("os.privacy")
 local S = {}
 local WEB, LEGACY = net.WEB_PROTOCOL, net.LEGACY_WEB_PROTOCOL
 local CFG = "/hackos/web.cfg"
@@ -37,7 +38,9 @@ end
 
 function S.setEnabled(enabled)
   local cfg = readConfig(); cfg.enabled = not not enabled
-  return saveConfig(cfg)
+  local ok, err = saveConfig(cfg)
+  if ok then privacy.log("WEBSITE_HOSTING", cfg.enabled and "enabled" or "disabled") end
+  return ok, err
 end
 
 function S.setDomain(domain)
@@ -100,7 +103,7 @@ function S.service()
       local ev = { os.pullEvent() }
       if active and ev[1] == "rednet_message" then
         local id, msg, protocol = ev[2], ev[3], ev[4]
-        if protocol == net.PROTOCOL and type(msg) == "table" and msg.kind == "DISCOVER" then
+        if protocol == net.PROTOCOL and type(msg) == "table" and msg.kind == "DISCOVER" and privacy.get("network_discovery") then
           rednet.send(id, offer(cfg), net.PROTOCOL)
         elseif protocol == WEB or protocol == LEGACY then
           handleRequest(id, msg, protocol)

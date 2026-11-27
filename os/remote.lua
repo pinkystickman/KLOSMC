@@ -4,6 +4,7 @@ local R = {}
 R.PROTOCOL = "hackos_remote_v1"
 local CFG = "/hackos/remote.json"
 local net = require("os.network")
+local privacy = require("os.privacy")
 
 local function readConfig()
   fs.makeDir("/hackos")
@@ -51,18 +52,22 @@ function R.enable()
   cfg.enabled = true
   local ok, err = writeConfig(cfg)
   if not ok then return false, err end
+  privacy.log("REMOTE_ACCESS_ENABLED", "Enabled on this computer")
   return true, cfg.pin
 end
 
 function R.disable()
   local cfg = readConfig(); cfg.enabled = false
-  return writeConfig(cfg)
+  local ok, err = writeConfig(cfg)
+  if ok then privacy.log("REMOTE_ACCESS_DISABLED", "Disabled on this computer") end
+  return ok, err
 end
 
 function R.rotatePin()
   local cfg = readConfig(); cfg.pin = newPin(); cfg.enabled = true
   local ok, err = writeConfig(cfg)
   if not ok then return false, err end
+  privacy.log("REMOTE_PIN_ROTATED", "Remote access code was changed")
   return true, cfg.pin
 end
 
@@ -200,6 +205,7 @@ end
 local function send(id, payload) rednet.send(id, payload, R.PROTOCOL) end
 
 local function offer(id)
+  if not privacy.get("network_discovery") then return end
   local cfg = readConfig()
   local services = { "DISCOVERY", "MAIL", "GUEST_DIAGNOSTICS" }
   if cfg.enabled then
@@ -215,47 +221,72 @@ local function handleRemote(id, msg)
   if type(msg) ~= "table" then return end
   if msg.kind == "AUTH" then
     if authorised(msg) then
+      privacy.log("REMOTE_AUTH_OK", "Authenticated controller computer #" .. tostring(id))
       send(id, { kind = "AUTH_RESULT", ok = true, hostname = net.getHostname(), ip = net.getIP(), computer = os.getComputerID() })
     else
+      privacy.log("REMOTE_AUTH_DENIED", "Failed authentication from computer #" .. tostring(id))
       send(id, { kind = "AUTH_RESULT", ok = false, error = "Access denied. Check the access code or enable Remote Access on the target PC." })
     end
   elseif msg.kind == "EXEC" then
-    if not authorised(msg) then send(id, { kind = "EXEC_RESULT", request = msg.request, ok = false, output = "Access denied." }); return end
+    if not authorised(msg) then
+      privacy.log("REMOTE_DENIED", "Rejected shell request from computer #" .. tostring(id))
+      send(id, { kind = "EXEC_RESULT", request = msg.request, ok = false, output = "Access denied." }); return
+    end
+    privacy.log("REMOTE_COMMAND", "Authenticated computer #" .. tostring(id) .. " requested a command")
     local ok, output = execute(msg.command)
     send(id, { kind = "EXEC_RESULT", request = msg.request, ok = ok, output = output })
   elseif msg.kind == "SCREEN" then
-    if not authorised(msg) then send(id, { kind = "SCREEN_RESULT", request = msg.request, ok = false, error = "Access denied." }); return end
+    if not authorised(msg) then
+      privacy.log("REMOTE_DENIED", "Rejected screen request from computer #" .. tostring(id))
+      send(id, { kind = "SCREEN_RESULT", request = msg.request, ok = false, error = "Access denied." }); return
+    end
     local frame, err = getFrame()
     send(id, { kind = "SCREEN_RESULT", request = msg.request, ok = frame ~= nil, frame = frame, error = err })
   elseif msg.kind == "INPUT" then
-    if authorised(msg) then handleInput(id, msg) end
+    if authorised(msg) then handleInput(id, msg)
+    else privacy.log("REMOTE_DENIED", "Rejected input request from computer #" .. tostring(id)) end
   elseif msg.kind == "FILES_LIST" then
-    if not authorised(msg) then send(id, { kind = "FILES_RESULT", request = msg.request, ok = false, error = "Access denied." }); return end
+    if not authorised(msg) then
+      privacy.log("REMOTE_DENIED", "Rejected file-list request from computer #" .. tostring(id))
+      send(id, { kind = "FILES_RESULT", request = msg.request, ok = false, error = "Access denied." }); return
+    end
     fs.makeDir("/public")
     local ok, entries = pcall(fs.list, "/public")
     if not ok then send(id, { kind = "FILES_RESULT", request = msg.request, ok = false, error = "Could not list /public." })
     else table.sort(entries); send(id, { kind = "FILES_RESULT", request = msg.request, ok = true, entries = entries }) end
   elseif msg.kind == "FILES_GET" then
-    if not authorised(msg) then send(id, { kind = "FILES_RESULT", request = msg.request, ok = false, error = "Access denied." }); return end
+    if not authorised(msg) then
+      privacy.log("REMOTE_DENIED", "Rejected file-read request from computer #" .. tostring(id))
+      send(id, { kind = "FILES_RESULT", request = msg.request, ok = false, error = "Access denied." }); return
+    end
     local path = safePublicName(msg.name)
     if not path or not fs.exists(path) or fs.isDir(path) then send(id, { kind = "FILES_RESULT", request = msg.request, ok = false, error = "File not found in /public." }); return end
     local f = fs.open(path, "r")
     if not f then send(id, { kind = "FILES_RESULT", request = msg.request, ok = false, error = "Cannot read file." }); return end
     local data = f.readAll(); f.close()
+    privacy.log("REMOTE_FILE_READ", "Computer #" .. tostring(id) .. " read a public file")
     if #data > 8192 then send(id, { kind = "FILES_RESULT", request = msg.request, ok = false, error = "Files larger than 8192 bytes cannot be transferred." })
     else send(id, { kind = "FILES_RESULT", request = msg.request, ok = true, name = msg.name, data = data }) end
   elseif msg.kind == "FILES_PUT" then
-    if not authorised(msg) then send(id, { kind = "FILES_RESULT", request = msg.request, ok = false, error = "Access denied." }); return end
+    if not authorised(msg) then
+      privacy.log("REMOTE_DENIED", "Rejected file-write request from computer #" .. tostring(id))
+      send(id, { kind = "FILES_RESULT", request = msg.request, ok = false, error = "Access denied." }); return
+    end
     local path = safePublicName(msg.name)
     if not path or type(msg.data) ~= "string" or #msg.data > 8192 then send(id, { kind = "FILES_RESULT", request = msg.request, ok = false, error = "Invalid filename or file exceeds 8192 bytes." }); return end
     fs.makeDir("/public")
     local f, err = fs.open(path, "w")
     if not f then send(id, { kind = "FILES_RESULT", request = msg.request, ok = false, error = tostring(err) }); return end
     f.write(msg.data); f.close()
+    privacy.log("REMOTE_FILE_WRITE", "Computer #" .. tostring(id) .. " uploaded a public file")
     send(id, { kind = "FILES_RESULT", request = msg.request, ok = true, name = msg.name })
   elseif msg.kind == "POWER" then
-    if not authorised(msg) then send(id, { kind = "POWER_RESULT", request = msg.request, ok = false, error = "Access denied." }); return end
+    if not authorised(msg) then
+      privacy.log("REMOTE_DENIED", "Rejected power request from computer #" .. tostring(id))
+      send(id, { kind = "POWER_RESULT", request = msg.request, ok = false, error = "Access denied." }); return
+    end
     if msg.action == "reboot" or msg.action == "shutdown" then
+      privacy.log("REMOTE_POWER", "Computer #" .. tostring(id) .. " requested " .. tostring(msg.action))
       send(id, { kind = "POWER_RESULT", request = msg.request, ok = true, message = "Power command accepted." })
       sleep(0.5)
       if msg.action == "reboot" then os.reboot() else os.shutdown() end

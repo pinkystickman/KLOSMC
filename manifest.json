@@ -1,10 +1,10 @@
 {
   "name": "KL OS / HackOS",
-  "version": "2.8.1",
+  "version": "2.9.0",
   "editions": {
     "standard": {
       "name": "KL OS Standard",
-      "description": "KL OS Standard with restored KL Store, KL Maker, Files, Browser, Mail, Website Hosting, OS Update and interactive authenticated Remote Desktop. Antivirus with a separately managed, protected security update channel.",
+      "description": "KL OS Standard with restored KL Store, KL Maker, Files, Browser, Mail, Website Hosting, OS Update and interactive authenticated Remote Desktop. Antivirus with a separately managed, protected security update channel. Includes Security & Privacy Center with local audit, privacy controls and system integrity checks.",
       "files": [
         {
           "source": "editions/standard/startup.lua",
@@ -134,12 +134,20 @@
           "source": "security.lua",
           "target": "security.lua",
           "channel": "security"
+        },
+        {
+          "source": "os/privacy.lua",
+          "target": "os/privacy.lua"
+        },
+        {
+          "source": "apps/privacy.lua",
+          "target": "apps/privacy.lua"
         }
       ]
     },
     "government": {
       "name": "HackOS Government",
-      "description": "HackOS Government with restored Hack Console, KL Store, KL Maker, Remote Center, interactive multi-PC Remote Desktop, file transfer, power management, Mail and website hosting. Antivirus with a separately managed, protected security update channel.",
+      "description": "HackOS Government with restored Hack Console, KL Store, KL Maker, Remote Center, interactive multi-PC Remote Desktop, file transfer, power management, Mail and website hosting. Antivirus with a separately managed, protected security update channel. Includes Security & Privacy Center with local audit, privacy controls and system integrity checks.",
       "files": [
         {
           "source": "startup.lua",
@@ -273,6 +281,14 @@
           "source": "security.lua",
           "target": "security.lua",
           "channel": "security"
+        },
+        {
+          "source": "os/privacy.lua",
+          "target": "os/privacy.lua"
+        },
+        {
+          "source": "apps/privacy.lua",
+          "target": "apps/privacy.lua"
         }
       ]
     }
@@ -291,6 +307,11 @@
     "app_store": "KL Store contains offline packages (Calculator, Notes, System Monitor and Dice Roller). Apps install into /Applications, register in the Start menu and are automatically pinned to the taskbar after core shortcuts when display space allows.",
     "maker": "KL Maker is a visual component builder. Website projects export HTML into /www; app projects export Lua programs into /Applications and register them in the Start menu. Projects are saved in /Documents/KLMaker.",
     "apps": "Custom and Store-installed apps are listed in Start and pinned to the taskbar when space allows. User applications are stored in /Applications; the app registry is /Applications/installed.json.",
-    "restored_apps": "Government edition includes Hack Console, KL Store and KL Maker. Both editions include KL Store and KL Maker plus Calculator, Notes, System Monitor and Dice Roller packages. App entries and package paths are included in both edition manifests where applicable."
+    "restored_apps": "Government edition includes Hack Console, KL Store and KL Maker. Both editions include KL Store and KL Maker plus Calculator, Notes, System Monitor and Dice Roller packages. App entries and package paths are included in both edition manifests where applicable.",
+    "privacy": "Security & Privacy Center stores preferences and audit records locally. No analytics or telemetry is transmitted. Users can disable discovery responses, inbound/outbound internal mail, remote administration, guest diagnostics, the KL OS system exploit lab and website hosting; emergency Lockdown turns these exposure points off together. A local integrity scan compares installed system files against the recovery image. It is not malware detection and does not sandbox arbitrary Lua applications.",
+    "audit": "Security audit log is local-only at /hackos/security/audit.log, bounded to the latest 160 events. It records setting changes, remote authentication outcomes, mail and selected remote actions. It does not record message bodies, access codes or keystrokes.",
+    "network_discovery_privacy": "Turning off network discovery stops this computer from responding to compatible KL OS / HackOS discovery broadcasts. It does not turn off the modem, block all rednet packets, or prevent access through a known computer ID/IP when another service is enabled.",
+    "integrity_scan": "Integrity scan compares files named by /hackos/recovery/index.json with local recovery copies. Locally modified system files may be reported; the scanner does not use cryptographic signatures or detect all malicious user files.",
+    "exploit_lab_control": "The deliberate Government-to-Standard system-file exploit lab is controlled by /hackos/privacy.json exploit_lab. When disabled, SYSTEM_PROBE, SYSTEM_EXPLOIT, SYSTEM_LIST and SYSTEM_DELETE requests are rejected. Default is enabled to preserve the established lab gameplay; Emergency Lockdown disables it."
   }
 }
