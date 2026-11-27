@@ -16,7 +16,8 @@ local BUILT_IN = {
   { name="Remote", mod="apps.remote", glyph="R", desc="Live remote screen, keyboard/mouse control and multi-PC administration" },
   { name="Mail", mod="apps.mail", glyph="E", desc="Internal network email" },
   { name="Hack", mod="apps.hack", glyph="H", desc="Minecraft-only KL OS exploit lab" },
-  { name="Security", mod="apps.security", glyph="C", desc="Local security and diagnostic settings" },
+  { name="Antivirus", mod="apps.antivirus", glyph="A", desc="Check and install protected security patches" },
+  { name="Security Settings", mod="apps.security", glyph="C", desc="Local security and diagnostic settings" },
   { name="OS Update", mod="apps.update", glyph="U", desc="Download and install OS updates" },
 }
 
@@ -113,7 +114,7 @@ local function drawDesktop(apps, startOpen, context, selected, status)
       local i = first + row - 1
       menu[#menu + 1] = { index=i, rect=ui.button(mx + 1, my + row, apps[i].glyph .. "  " .. apps[i].name, selected == i) }
     end
-    ui.text(mx + 1, math.min(h - 1, my + visible + 1), "v2.7.1  |  Power: Q", T.fg, T.panel)
+    ui.text(mx + 1, math.min(h - 1, my + visible + 1), "v2.8.0  |  Power: Q", T.fg, T.panel)
   end
 
   local contextRects = {}

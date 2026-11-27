@@ -13,7 +13,7 @@ end
 function R.isSystemPath(path)
   path = clean(path)
   if not path then return false end
-  return path == "startup.lua" or path == "rescue.lua" or path == "remote-access.lua"
+  return path == "startup.lua" or path == "rescue.lua" or path == "remote-access.lua" or path == "security.lua"
     or path:match("^os/") ~= nil or path:match("^apps/") ~= nil or path:match("^server/") ~= nil
 end
 

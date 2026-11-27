@@ -1,6 +1,6 @@
 -- KL OS / HackOS edition installer. Run: wget <repo>/install.lua install.lua ; install.lua
 local BASE_URL = "https://raw.githubusercontent.com/pinkystickman/KLOSMC/main/"
-local VERSION = "2.7.1"
+local VERSION = "2.8.0"
 
 local function theme()
   local colour = term.isColor()
@@ -85,15 +85,20 @@ local function install(editionKey)
   end
 
   local data, total = {}, #edition.files
+  local protectedSecurityPreserved = false
   for i, item in ipairs(edition.files) do
-    local source, target
+    local source, target, channel
     if type(item) == "string" then source, target = item, item
-    elseif type(item) == "table" then source, target = item.source, item.target end
+    elseif type(item) == "table" then source, target, channel = item.source, item.target, item.channel end
     if not safePath(source) or not safePath(target) then error("Unsafe file entry in manifest: " .. tostring(source), 0) end
-    progress(i - 1, total, "Downloading " .. source)
-    local body, why = get(source)
-    if not body then error("Download failed for " .. source .. ": " .. tostring(why), 0) end
-    data[target] = body
+    if (channel == "security" or target == "security.lua") and fs.exists("/security.lua") then
+      protectedSecurityPreserved = true
+    else
+      progress(i - 1, total, "Downloading " .. source)
+      local body, why = get(source)
+      if not body then error("Download failed for " .. source .. ": " .. tostring(why), 0) end
+      data[target] = body
+    end
   end
 
   draw("Installing " .. edition.name, "Writing system files...")
@@ -113,17 +118,31 @@ local function install(editionKey)
   for path in pairs(data) do paths[#paths + 1] = path end
   table.sort(paths)
   -- Save a clean recovery copy before replacing the live operating-system files.
+  -- Keep the existing protected security core in the recovery image even though
+  -- the installer deliberately skips writing it during an upgrade.
   fs.makeDir("/hackos/recovery/files")
+  local recoveryPaths = {}
   for _, path in ipairs(paths) do
     local backup = fs.combine("/hackos/recovery/files", path)
     local backupDir = fs.getDir(backup); if backupDir ~= "" then fs.makeDir(backupDir) end
     local bf, be = fs.open(backup, "w")
     if not bf then error("Cannot write recovery backup for " .. path .. ": " .. tostring(be), 0) end
     bf.write(data[path]); bf.close()
+    recoveryPaths[#recoveryPaths + 1] = path
   end
+  if fs.exists("/security.lua") then
+    local present = false
+    for _, path in ipairs(recoveryPaths) do if path == "security.lua" then present = true; break end end
+    if not present then
+      local copied, copyErr = pcall(fs.copy, "/security.lua", "/hackos/recovery/files/security.lua")
+      if not copied then error("Cannot preserve protected security recovery file: " .. tostring(copyErr), 0) end
+      recoveryPaths[#recoveryPaths + 1] = "security.lua"
+    end
+  end
+  table.sort(recoveryPaths)
   local indexFile, indexErr = fs.open("/hackos/recovery/index.json", "w")
   if not indexFile then error("Cannot write recovery index: " .. tostring(indexErr), 0) end
-  indexFile.write(textutils.serialiseJSON({ version = VERSION, edition = editionKey, paths = paths }))
+  indexFile.write(textutils.serialiseJSON({ version = VERSION, edition = editionKey, paths = recoveryPaths }))
   indexFile.close()
 
   for i, path in ipairs(paths) do
@@ -146,7 +165,8 @@ local function install(editionKey)
   draw("Installation complete", edition.name .. " is ready.")
   text(2, 6, "System files installed successfully.", T.good, T.bg)
   if startupBackup then text(2, 7, "Previous startup.lua saved as startup.lua.bak", T.fg, T.bg) end
-  text(2, 9, "The computer will reboot into " .. edition.name .. ".", T.fg, T.bg)
+  if protectedSecurityPreserved then text(2, 8, "Existing /security.lua was preserved. Use Antivirus for security patches.", T.good, T.bg) end
+  text(2, 10, "The computer will reboot into " .. edition.name .. ".", T.fg, T.bg)
   sleep(2)
   os.reboot()
 end

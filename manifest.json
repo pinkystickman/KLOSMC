@@ -1,10 +1,10 @@
 {
   "name": "KL OS / HackOS",
-  "version": "2.7.1",
+  "version": "2.8.0",
   "editions": {
     "standard": {
       "name": "KL OS Standard",
-      "description": "KL OS Standard with restored KL Store, KL Maker, Files, Browser, Mail, Website Hosting, OS Update and interactive authenticated Remote Desktop.",
+      "description": "KL OS Standard with restored KL Store, KL Maker, Files, Browser, Mail, Website Hosting, OS Update and interactive authenticated Remote Desktop. Antivirus with a separately managed, protected security update channel.",
       "files": [
         {
           "source": "editions/standard/startup.lua",
@@ -53,6 +53,10 @@
         {
           "source": "apps/security.lua",
           "target": "apps/security.lua"
+        },
+        {
+          "source": "apps/antivirus.lua",
+          "target": "apps/antivirus.lua"
         },
         {
           "source": "os/mail.lua",
@@ -125,12 +129,17 @@
         {
           "source": "store/packages/dice.lua",
           "target": "store/packages/dice.lua"
+        },
+        {
+          "source": "security.lua",
+          "target": "security.lua",
+          "channel": "security"
         }
       ]
     },
     "government": {
       "name": "HackOS Government",
-      "description": "HackOS Government with restored Hack Console, KL Store, KL Maker, Remote Center, interactive multi-PC Remote Desktop, file transfer, power management, Mail and website hosting.",
+      "description": "HackOS Government with restored Hack Console, KL Store, KL Maker, Remote Center, interactive multi-PC Remote Desktop, file transfer, power management, Mail and website hosting. Antivirus with a separately managed, protected security update channel.",
       "files": [
         {
           "source": "startup.lua",
@@ -197,6 +206,10 @@
           "target": "apps/security.lua"
         },
         {
+          "source": "apps/antivirus.lua",
+          "target": "apps/antivirus.lua"
+        },
+        {
           "source": "os/mail.lua",
           "target": "os/mail.lua"
         },
@@ -255,6 +268,11 @@
         {
           "source": "store/packages/dice.lua",
           "target": "store/packages/dice.lua"
+        },
+        {
+          "source": "security.lua",
+          "target": "security.lua",
+          "channel": "security"
         }
       ]
     }

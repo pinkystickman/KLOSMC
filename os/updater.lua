@@ -68,6 +68,7 @@ function U.run()
   ui.text(2, 3, "Current edition: " .. edition:upper(), T.fg, T.bg)
   ui.text(2, 5, "Check GitHub for the newest KL OS / HackOS build?", T.fg, T.bg)
   ui.text(2, 7, "User files in /Documents and websites in /www are preserved.", T.accent, T.bg)
+  ui.text(2, 8, "Protected /security.lua is excluded. Use Antivirus for security patches.", T.good, T.bg)
   local yes = ui.button(2, h - 2, "Check for updates", true)
   local no = ui.button(23, h - 2, "Back")
   while true do
@@ -95,12 +96,23 @@ function U.run()
     return
   end
 
-  local files = {}
+  local files, protectedSecurityPreserved, securityBootstrapped = {}, false, false
   for _, item in ipairs(selected.files) do
-    local source, target
-    if type(item) == "string" then source, target = item, item else source, target = item.source, item.target end
+    local source, target, channel
+    if type(item) == "string" then source, target = item, item
+    else source, target, channel = item.source, item.target, item.channel end
     if not safePath(source) or not safePath(target) then ui.message("Update failed", "Unsafe file path in update manifest."); return end
-    files[#files + 1] = { source = source, target = target }
+    if channel == "security" or target == "security.lua" then
+      if fs.exists("/security.lua") then
+        protectedSecurityPreserved = true
+      else
+        -- One-time bootstrap for upgrades from releases that did not have the protected core.
+        files[#files + 1] = { source = source, target = target }
+        securityBootstrapped = true
+      end
+    else
+      files[#files + 1] = { source = source, target = target }
+    end
   end
   files[#files + 1] = { source = "install.lua", target = "install.lua" }
   files[#files + 1] = { source = "manifest.json", target = "manifest.json" }
@@ -161,11 +173,25 @@ function U.run()
     local ok = write(backupPath, downloaded[path])
     if not ok then recoveryOK = false end
   end
+  if fs.exists("/security.lua") then
+    local securityBackup = "/hackos/recovery/files/security.lua"
+    local copied, copyErr = pcall(fs.copy, "/security.lua", securityBackup)
+    if copied then
+      local found = false
+      for _, existingPath in ipairs(paths) do if existingPath == "security.lua" then found = true; break end end
+      if not found then paths[#paths + 1] = "security.lua" end
+    else
+      recoveryOK = false
+    end
+  end
   if recoveryOK then
+    table.sort(paths)
     write("/hackos/recovery/index.json", textutils.serialiseJSON({ version = version, edition = edition, paths = paths }))
   end
   fs.delete("/hackos/update-staging")
   ui.message("Update complete", "Installed " .. version .. " for " .. edition:upper() .. ".\nYour documents, mail and website files were preserved." ..
+    (protectedSecurityPreserved and "\nProtected /security.lua was NOT changed. Use Antivirus > Check for Security Updates." or "") ..
+    (securityBootstrapped and "\nBaseline /security.lua was installed and is now protected." or "") ..
     (recoveryOK and "\nRecovery image refreshed." or "\nWarning: recovery image could not be refreshed.") .. "\nThe computer will reboot now.")
   os.reboot()
 end
