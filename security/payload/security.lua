@@ -1,7 +1,7 @@
 -- Protected KL OS / HackOS security core.
 -- This file is intentionally excluded from normal OS updates. Update it only
 -- from the Antivirus application through security/manifest.json.
-local SECURITY_VERSION = "1.0.1"
+local SECURITY_VERSION = "1.0.2"
 local BASE_URL = "https://raw.githubusercontent.com/pinkystickman/KLOSMC/main/"
 local FEED_PATH = "security/manifest.json"
 local SECURITY_PATH = "/security.lua"
@@ -99,6 +99,18 @@ function S.checkForUpdates()
   }
 end
 
+local function restoreSecurityFile(hadOld, backupFile)
+  if fs.exists(SECURITY_PATH) then fs.delete(SECURITY_PATH) end
+  if hadOld then
+    if not fs.exists(backupFile) then return false, "The previous security backup is missing." end
+    local ok, err = pcall(fs.copy, backupFile, SECURITY_PATH)
+    if not ok or not fs.exists(SECURITY_PATH) then
+      return false, "Could not restore the previous security file: " .. tostring(err)
+    end
+  end
+  return true
+end
+
 function S.installLatest()
   local status = S.checkForUpdates()
   if not status.ok then return false, status.error end
@@ -118,25 +130,37 @@ function S.installLatest()
 
   fs.delete(BACKUP_DIR)
   fs.makeDir(BACKUP_DIR)
+  local backupFile = BACKUP_DIR .. "/security.lua"
   local hadOld = fs.exists(SECURITY_PATH)
-  if hadOld then fs.copy(SECURITY_PATH, BACKUP_DIR .. "/security.lua") end
+  if hadOld then
+    local backupOK, backupErr = pcall(fs.copy, SECURITY_PATH, backupFile)
+    if not backupOK or not fs.exists(backupFile) then
+      fs.delete(STAGE_DIR)
+      return false, "Could not back up the current security core: " .. tostring(backupErr)
+    end
+  end
+
   local previousVersion = S.getVersion()
-  local writeOK, writeErr = pcall(function() fs.copy(staged, SECURITY_PATH) end)
-  if not writeOK then
-    if hadOld and fs.exists(BACKUP_DIR .. "/security.lua") then fs.copy(BACKUP_DIR .. "/security.lua", SECURITY_PATH)
-    else fs.delete(SECURITY_PATH) end
+  -- CC:Tweaked fs.copy refuses to overwrite an existing destination. Remove the
+  -- live file only after the backup is verified, then move the staged file in.
+  if fs.exists(SECURITY_PATH) then fs.delete(SECURITY_PATH) end
+  local installOK, installErr = pcall(fs.move, staged, SECURITY_PATH)
+  if not installOK or not fs.exists(SECURITY_PATH) then
+    local restored, restoreErr = restoreSecurityFile(hadOld, backupFile)
     fs.delete(STAGE_DIR)
-    return false, "Could not install security patch: " .. tostring(writeErr)
+    return false, "Could not install security patch: " .. tostring(installErr) ..
+      (restored and " Previous security core restored." or " " .. tostring(restoreErr))
   end
 
   local versionOK, versionErr = writeFile(VERSION_PATH, status.latest .. "\n")
   if not versionOK then
-    if hadOld and fs.exists(BACKUP_DIR .. "/security.lua") then fs.copy(BACKUP_DIR .. "/security.lua", SECURITY_PATH)
-    else fs.delete(SECURITY_PATH) end
+    local restored, restoreErr = restoreSecurityFile(hadOld, backupFile)
     writeFile(VERSION_PATH, previousVersion .. "\n")
     fs.delete(STAGE_DIR)
-    return false, "Could not save security version: " .. tostring(versionErr)
+    return false, "Could not save security version: " .. tostring(versionErr) ..
+      (restored and " Previous security core restored." or " " .. tostring(restoreErr))
   end
+
   -- Refresh the recovery copy so a later repair restores the patched security core.
   local indexPath = "/hackos/recovery/index.json"
   local index = { paths = {} }

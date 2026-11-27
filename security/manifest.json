@@ -1,7 +1,7 @@
 {
   "product": "KL OS / HackOS Antivirus Security Core",
-  "version": "1.0.1",
-  "release_notes": "Security channel update: refreshed protected update validation, staged installation, backup and rollback handling.",
+  "version": "1.0.2",
+  "release_notes": "Fixes replacement of an existing /security.lua on CC:Tweaked. The updater now backs up, removes, moves and safely restores the protected core without copying onto an existing destination.",
   "files": [
     {
       "source": "security/payload/security.lua",

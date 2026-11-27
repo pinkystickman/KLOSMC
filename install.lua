@@ -1,6 +1,6 @@
 -- KL OS / HackOS edition installer. Run: wget <repo>/install.lua install.lua ; install.lua
 local BASE_URL = "https://raw.githubusercontent.com/pinkystickman/KLOSMC/main/"
-local VERSION = "2.8.0"
+local VERSION = "2.8.1"
 
 local function theme()
   local colour = term.isColor()
@@ -134,7 +134,9 @@ local function install(editionKey)
     local present = false
     for _, path in ipairs(recoveryPaths) do if path == "security.lua" then present = true; break end end
     if not present then
-      local copied, copyErr = pcall(fs.copy, "/security.lua", "/hackos/recovery/files/security.lua")
+      local recoverySecurity = "/hackos/recovery/files/security.lua"
+      if fs.exists(recoverySecurity) then fs.delete(recoverySecurity) end
+      local copied, copyErr = pcall(fs.copy, "/security.lua", recoverySecurity)
       if not copied then error("Cannot preserve protected security recovery file: " .. tostring(copyErr), 0) end
       recoveryPaths[#recoveryPaths + 1] = "security.lua"
     end

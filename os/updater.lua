@@ -155,11 +155,20 @@ function U.run()
   end
 
   if failure then
+    local rollbackFailures = {}
     for _, path in ipairs(applied) do
-      if existed[path] then fs.copy(fs.combine("/hackos/update-backup", path), path) else fs.delete(path) end
+      if existed[path] then
+        if fs.exists(path) then fs.delete(path) end
+        local backup = fs.combine("/hackos/update-backup", path)
+        local restored, restoreErr = pcall(fs.copy, backup, path)
+        if not restored or not fs.exists(path) then rollbackFailures[#rollbackFailures + 1] = path .. " (" .. tostring(restoreErr) .. ")" end
+      else
+        if fs.exists(path) then fs.delete(path) end
+      end
     end
     fs.delete("/hackos/update-staging")
-    ui.message("Update rolled back", failure .. "\nPrevious system files were restored.")
+    local detail = #rollbackFailures == 0 and "Previous system files were restored." or "Some rollback files need rescue: " .. table.concat(rollbackFailures, ", ")
+    ui.message("Update rolled back", failure .. "\n" .. detail)
     return
   end
 
@@ -175,6 +184,7 @@ function U.run()
   end
   if fs.exists("/security.lua") then
     local securityBackup = "/hackos/recovery/files/security.lua"
+    if fs.exists(securityBackup) then fs.delete(securityBackup) end
     local copied, copyErr = pcall(fs.copy, "/security.lua", securityBackup)
     if copied then
       local found = false
