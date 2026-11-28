@@ -10,12 +10,14 @@ local BUILT_IN = {
   { name="Terminal", mod="apps.shell", glyph="T", desc="Run CraftOS commands and Lua scripts" },
   { name="KL Store", mod="apps.store", glyph="S", desc="Install apps from the local application catalogue" },
   { name="KL Maker", mod="apps.maker", glyph="M", desc="Visually create websites and terminal apps" },
+  { name="Disk Manager", mod="apps.diskmanager", glyph="D", desc="Manage multiple floppy drives and removable storage" },
   { name="Website Studio", mod="apps.site", glyph="W", desc="Create, edit and publish your own website" },
   { name="Server", mod="apps.server", glyph="V", desc="Host your website on this computer" },
   { name="Network", mod="apps.network", glyph="N", desc="IP address and connected computers" },
   { name="Remote", mod="apps.remote", glyph="R", desc="Live remote screen, keyboard/mouse control and multi-PC administration" },
   { name="Mail", mod="apps.mail", glyph="E", desc="Internal network email" },
   { name="Hack", mod="apps.hack", glyph="H", desc="Minecraft-only KL OS exploit lab" },
+  { name="Malware Lab", mod="apps.malwarelab", glyph="L", desc="Build and run harmless malware-behaviour simulations" },
   { name="Antivirus", mod="apps.antivirus", glyph="A", desc="Check and install protected security patches" },
   { name="Security & Privacy", mod="apps.privacy", glyph="P", desc="Privacy controls, integrity scans and local audit log" },
   { name="Lab Security", mod="apps.security", glyph="C", desc="Toggle the intentionally vulnerable diagnostics lab" },
@@ -70,7 +72,7 @@ end
 
 local function taskbarPins(apps)
   local indices, used = {}, {}
-  for _, name in ipairs({ "Files", "Browser", "Terminal", "KL Store", "KL Maker" }) do
+  for _, name in ipairs({ "Files", "Browser", "Terminal", "KL Store", "KL Maker", "Disk Manager" }) do
     for i, app in ipairs(apps) do
       if app.name == name and not used[i] then indices[#indices + 1] = i; used[i] = true; break end
     end
@@ -115,7 +117,7 @@ local function drawDesktop(apps, startOpen, context, selected, status)
       local i = first + row - 1
       menu[#menu + 1] = { index=i, rect=ui.button(mx + 1, my + row, apps[i].glyph .. "  " .. apps[i].name, selected == i) }
     end
-    ui.text(mx + 1, math.min(h - 1, my + visible + 1), "v2.9.0  |  Power: Q", T.fg, T.panel)
+    ui.text(mx + 1, math.min(h - 1, my + visible + 1), "v3.0.0  |  Power: Q", T.fg, T.panel)
   end
 
   local contextRects = {}

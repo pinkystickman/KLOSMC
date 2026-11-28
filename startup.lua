@@ -1,4 +1,4 @@
--- KL OS / HackOS dual-edition startup (2.9.0).
+-- KL OS / HackOS dual-edition startup (3.0.0).
 package.path = "/?.lua;/?/init.lua;" .. package.path
 
 local function repairMissing()

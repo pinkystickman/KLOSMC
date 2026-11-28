@@ -9,6 +9,7 @@ local BUILT_IN = {
   { name="Terminal", mod="apps.shell", glyph="T" },
   { name="KL Store", mod="apps.store", glyph="S" },
   { name="KL Maker", mod="apps.maker", glyph="M" },
+  { name="Disk Manager", mod="apps.diskmanager", glyph="D" },
   { name="Website Studio", mod="apps.site", glyph="W" },
   { name="Server", mod="apps.server", glyph="V" },
   { name="Network", mod="apps.network", glyph="N" },
@@ -63,7 +64,7 @@ end
 
 local function taskbarPins(apps)
   local indices, used = {}, {}
-  for _, name in ipairs({ "Files", "Browser", "Terminal", "KL Store", "KL Maker" }) do
+  for _, name in ipairs({ "Files", "Browser", "Terminal", "KL Store", "KL Maker", "Disk Manager" }) do
     for i, app in ipairs(apps) do
       if app.name == name and not used[i] then indices[#indices + 1] = i; used[i] = true; break end
     end
@@ -108,7 +109,7 @@ local function draw(apps, startOpen, context, selected)
       local i = first + row - 1
       menu[#menu + 1] = { index=i, rect=ui.button(mx + 1, my + row, apps[i].glyph .. "  " .. apps[i].name, selected == i) }
     end
-    ui.text(mx + 1, math.min(h - 1, my + visible + 1), "v2.9.0  |  Esc: close", T.fg, T.panel)
+    ui.text(mx + 1, math.min(h - 1, my + visible + 1), "v3.0.0  |  Esc: close", T.fg, T.panel)
   end
 
   local contextRects = {}

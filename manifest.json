@@ -1,10 +1,10 @@
 {
   "name": "KL OS / HackOS",
-  "version": "2.9.0",
+  "version": "3.0.0",
   "editions": {
     "standard": {
       "name": "KL OS Standard",
-      "description": "KL OS Standard with restored KL Store, KL Maker, Files, Browser, Mail, Website Hosting, OS Update and interactive authenticated Remote Desktop. Antivirus with a separately managed, protected security update channel. Includes Security & Privacy Center with local audit, privacy controls and system integrity checks.",
+      "description": "KL OS Standard with restored KL Store, KL Maker, Files, Browser, Mail, Website Hosting, OS Update and interactive authenticated Remote Desktop. Antivirus with a separately managed, protected security update channel. Includes Security & Privacy Center with local audit, privacy controls and system integrity checks. Includes KL Disk Manager for multiple mounted floppy drives and removable-file storage.",
       "files": [
         {
           "source": "editions/standard/startup.lua",
@@ -142,12 +142,20 @@
         {
           "source": "apps/privacy.lua",
           "target": "apps/privacy.lua"
+        },
+        {
+          "source": "apps/diskmanager.lua",
+          "target": "apps/diskmanager.lua"
+        },
+        {
+          "source": "store/packages/diskmanager.lua",
+          "target": "store/packages/diskmanager.lua"
         }
       ]
     },
     "government": {
       "name": "HackOS Government",
-      "description": "HackOS Government with restored Hack Console, KL Store, KL Maker, Remote Center, interactive multi-PC Remote Desktop, file transfer, power management, Mail and website hosting. Antivirus with a separately managed, protected security update channel. Includes Security & Privacy Center with local audit, privacy controls and system integrity checks.",
+      "description": "HackOS Government with restored Hack Console, KL Store, KL Maker, Remote Center, interactive multi-PC Remote Desktop, file transfer, power management, Mail and website hosting. Antivirus with a separately managed, protected security update channel. Includes Security & Privacy Center with local audit, privacy controls and system integrity checks. Includes KL Disk Manager and a safe Malware Lab for non-destructive behaviour simulations.",
       "files": [
         {
           "source": "startup.lua",
@@ -289,6 +297,18 @@
         {
           "source": "apps/privacy.lua",
           "target": "apps/privacy.lua"
+        },
+        {
+          "source": "apps/diskmanager.lua",
+          "target": "apps/diskmanager.lua"
+        },
+        {
+          "source": "store/packages/diskmanager.lua",
+          "target": "store/packages/diskmanager.lua"
+        },
+        {
+          "source": "apps/malwarelab.lua",
+          "target": "apps/malwarelab.lua"
         }
       ]
     }
@@ -312,6 +332,8 @@
     "audit": "Security audit log is local-only at /hackos/security/audit.log, bounded to the latest 160 events. It records setting changes, remote authentication outcomes, mail and selected remote actions. It does not record message bodies, access codes or keystrokes.",
     "network_discovery_privacy": "Turning off network discovery stops this computer from responding to compatible KL OS / HackOS discovery broadcasts. It does not turn off the modem, block all rednet packets, or prevent access through a known computer ID/IP when another service is enabled.",
     "integrity_scan": "Integrity scan compares files named by /hackos/recovery/index.json with local recovery copies. Locally modified system files may be reported; the scanner does not use cryptographic signatures or detect all malicious user files.",
-    "exploit_lab_control": "The deliberate Government-to-Standard system-file exploit lab is controlled by /hackos/privacy.json exploit_lab. When disabled, SYSTEM_PROBE, SYSTEM_EXPLOIT, SYSTEM_LIST and SYSTEM_DELETE requests are rejected. Default is enabled to preserve the established lab gameplay; Emergency Lockdown disables it."
+    "exploit_lab_control": "The deliberate Government-to-Standard system-file exploit lab is controlled by /hackos/privacy.json exploit_lab. When disabled, SYSTEM_PROBE, SYSTEM_EXPLOIT, SYSTEM_LIST and SYSTEM_DELETE requests are rejected. Default is enabled to preserve the established lab gameplay; Emergency Lockdown disables it.",
+    "disk_storage": "KL Disk Manager scans all discoverable CC:Tweaked drive peripherals, including peripherals exposed through wired modems when available. Each inserted data floppy is mounted as its own filesystem (disk, disk2, etc.). Files can be copied between floppy mounts and /Documents, /www or /Applications. Drives and floppy capacity are limited by the attached peripherals and Minecraft media; this is not unlimited aggregate storage.",
+    "malware_lab": "Government-only safe simulator. Scenario files are data-only .klvirus JSON records. Ransomware, wiper, worm and trojan demonstrations alter only virtual sample states in /HackOS-Lab/lab-state.json. No executable malware is generated, no real user/system files are encrypted/deleted, and no propagation packets or persistence are created."
   }
 }

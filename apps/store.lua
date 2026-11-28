@@ -8,6 +8,7 @@ local CATALOG = {
   { id = "notes", name = "Notes", category = "Productivity", version = "1.0.0", description = "Create, browse and edit text notes in Documents.", source = "/store/packages/notes.lua" },
   { id = "monitor", name = "System Monitor", category = "System", version = "1.0.0", description = "View edition, version, memory, uptime and computer details.", source = "/store/packages/monitor.lua" },
   { id = "dice", name = "Dice Roller", category = "Games", version = "1.0.0", description = "Roll up to eight dice for games and roleplay.", source = "/store/packages/dice.lua" },
+  { id = "diskmanager", name = "Floppy Disk Manager", category = "Storage", version = "1.0.0", description = "Browse multiple floppy drives and copy files between disks and your computer.", source = "/store/packages/diskmanager.lua" },
 }
 
 local function install(item)

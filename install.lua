@@ -1,6 +1,6 @@
 -- KL OS / HackOS edition installer. Run: wget <repo>/install.lua install.lua ; install.lua
 local BASE_URL = "https://raw.githubusercontent.com/pinkystickman/KLOSMC/main/"
-local VERSION = "2.9.0"
+local VERSION = "3.0.0"
 
 local function theme()
   local colour = term.isColor()
